@@ -6,6 +6,22 @@ namespace OpenMined.Syft.NN
 {
     public static class Functional
     {
+
+        public static FloatTensor Conv2d(FloatTensor input, FloatTensor kernel, FloatTensor bias, int[] stride, int[] padding, int[] dilation, int group)
+        {
+            int[] viewShape = { input.Shape[0], input.Shape[1] * input.Shape[2] };
+            int[] kernelShape = { kernel.Shape[0] * kernel.Shape[1], 1 };
+            /*
+                        Debug.LogFormat("input: {0}", input.Print());
+                        Debug.LogFormat("inputShape: {0}", string.Join(",",viewShape));
+                        Debug.LogFormat("reshaped: {0}", input.View(viewShape).Print());
+                        Debug.LogFormat("kernel: {0}", _kernel.Print());
+                        Debug.LogFormat("kernelShape: {0}", string.Join(",", kernelShape));
+            //            Debug.LogFormat("reshaped: {1}", _kernel.View(kernelShape).Print());
+            */
+            return input.View(viewShape).MM(kernel.View(kernelShape));
+        }
+
         public static FloatTensor Softmax(FloatTensor input, int dim = -1)
         {
             

@@ -59,7 +59,6 @@ namespace OpenMined.Syft.Layer
                 }
                 case "params":
                 {
-                    
                     string out_str = "";
 
                     for (int i = 0; i < models.Count; i++)
