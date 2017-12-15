@@ -3,12 +3,10 @@ using OpenMined.Network.Controllers;
 using OpenMined.Network.Utils;
 using OpenMined.Syft.Tensor;
 
-namespace OpenMined.Syft.Model
+namespace OpenMined.Syft.Layer
 {
-	public class Linear: Layer.Model
+	public class Linear: Model
 	{
-
-		
 		private int _input;
 		private int _output;
 
@@ -38,7 +36,6 @@ namespace OpenMined.Syft.Model
 			#pragma warning disable 420
 			id = System.Threading.Interlocked.Increment(ref nCreated);
 			controller.addModel(this);
-
 		}
 
 		public override FloatTensor Forward(FloatTensor input)
@@ -48,4 +45,3 @@ namespace OpenMined.Syft.Model
 
 	}
 }
-

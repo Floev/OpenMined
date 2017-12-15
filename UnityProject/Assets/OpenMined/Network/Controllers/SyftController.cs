@@ -113,30 +113,42 @@ namespace OpenMined.Network.Controllers
 						return tensor.ProcessMessage(msgObj, this);
 					}
 				}
-				case "model":
-				{
-					if (msgObj.functionCall == "create")
-					{
-						string model_type = msgObj.tensorIndexParams[0];
+                case "model":
+                {
+                    if (msgObj.functionCall == "create")
+                    {
+                        string model_type = msgObj.tensorIndexParams[0];
+                        string arg_split = "";
+                        if (msgObj.tensorIndexParams.Length > 0) arg_split = " : ";
 
-						if (model_type == "linear")
+                        Debug.LogFormat("<color=magenta>createModel:</color> {0}{1}{2}", model_type, arg_split, string.Join(" ", msgObj.tensorIndexParams));
+
+                        if (model_type == "conv2d")
+                        {
+                            int[] args = msgObj.tensorIndexParams.Skip(1).Select(s => int.Parse(s)).ToArray();
+                            int[] kernel = { args[3], args[4] };
+                            int[] stride = { args[5], args[6] };
+                            int[] padding = { args[7], args[8] };
+                            int[] dilation = { args[9], args[10] };
+                            bool bias = args[12] != 0;
+                            Conv2d model = new Conv2d(this, args[0], args[1],kernel,stride,padding,dilation,args[11], bias);
+                            return model.Id.ToString();
+                        }
+                        if (model_type == "linear")
+                        {
+                            Linear model = new Linear(this, int.Parse(msgObj.tensorIndexParams[1]), int.Parse(msgObj.tensorIndexParams[2]));
+                            return model.Id.ToString();
+                        }
+                        else if (model_type == "sequential")
+                        {
+                            Sequential model = new Sequential(this);
+                            return model.Id.ToString();
+                        }
+                        else if (model_type == "sigmoid")
 						{
-							Debug.LogFormat("<color=magenta>createModel:</color> {0} : {1} {2}", model_type,
-								msgObj.tensorIndexParams[1], msgObj.tensorIndexParams[2]);
-							Linear model = new Linear(this, int.Parse(msgObj.tensorIndexParams[1]), int.Parse(msgObj.tensorIndexParams[2]));
-							return model.Id.ToString();
-						} else if (model_type == "sigmoid")
-						{
-							Debug.LogFormat("<color=magenta>createModel:</color> {0}", model_type);
 							Sigmoid model = new Sigmoid(this);
 							return model.Id.ToString();
-						} else if (model_type == "sequential")
-						{
-							Debug.LogFormat("<color=magenta>createModel:</color> {0}", model_type);
-							Sequential model = new Sequential(this);
-							return model.Id.ToString();
 						}
-
 					} 
 					else
 					{
