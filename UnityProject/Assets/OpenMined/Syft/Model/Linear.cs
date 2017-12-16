@@ -7,8 +7,8 @@ namespace OpenMined.Syft.Layer
 {
 	public class Linear: Model
 	{
-		private int _input;
-		private int _output;
+//		private int _input;
+//		private int _output;
 
 		private readonly FloatTensor _weights;
 		private FloatTensor _bias;
@@ -19,8 +19,8 @@ namespace OpenMined.Syft.Layer
 
 			this.controller = _controller;
 			
-			_input = input;
-			_output = output;
+//			_input = input;
+//			_output = output;
 			
 			int[] weightShape = { input, output };
 			var weights = controller.RandomWeights(input * output);
