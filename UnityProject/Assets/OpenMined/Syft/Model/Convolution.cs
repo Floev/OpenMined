@@ -3,14 +3,14 @@ using OpenMined.Network.Controllers;
 //using OpenMined.Network.Utils;
 using OpenMined.Syft.Tensor;
 //using OpenMined.Syft.NN;
-//using UnityEngine;
+using UnityEngine;
 using System.Linq;
 
 namespace OpenMined.Syft.Layer
 {
     public class Conv2d : Model
     {
-        private int _in_dim;
+        //private int _in_dim;
         private int _out_dim;
         private int[] _kernel_dims;
         private int[] _stride_dims;
@@ -18,12 +18,14 @@ namespace OpenMined.Syft.Layer
         private int[] _dilation_dims;
         private int _group;
         private bool _biased;
+        private bool _transposed;
         //private readonly FloatTensor _kernel;
         private FloatTensor _kernel;
         private FloatTensor _bias;
 
         public Conv2d(SyftController _controller, int input, int output, int[] kernel,
-            int[] stride = null, int[] padding = null, int[] dilation = null, int group = 1, bool bias = false)
+            int[] stride = null, int[] padding = null, int[] dilation = null, int group = 1, bool bias = false, bool transposed = false,
+            float[] kernelData=null)
         {
             init();
             if (stride == null)
@@ -37,7 +39,7 @@ namespace OpenMined.Syft.Layer
 
             this.controller = _controller;
 
-            _in_dim = input;
+//            _in_dim = input;
             _out_dim = output;
             _kernel_dims = kernel;
             _stride_dims = stride;
@@ -45,9 +47,13 @@ namespace OpenMined.Syft.Layer
             _dilation_dims = dilation;
             _group = group;
             _biased = bias;
+            _transposed = transposed;
+            int[] kernelShape = new int[] { kernel[0], kernel[1], output*group/input };
+            float[] _kernelData = kernelData;
+            if (_kernelData == null) _kernelData = controller.RandomWeights(kernelShape.Aggregate(1, (a, b) => a * b));
 
-            _kernel = new FloatTensor(controller, _shape: kernel, _data: controller.RandomWeights(kernel.Aggregate(1, (a, b) => a * b)), _autograd: true);
-//            Debug.LogFormat("Init kernel: {0}", _kernel.Print());
+            _kernel = new FloatTensor(controller, _shape: kernelShape, _data: _kernelData, _autograd: true);
+
             parameters.Add(_kernel.Id);
 
             if (_biased)
@@ -64,7 +70,7 @@ namespace OpenMined.Syft.Layer
 
         public override FloatTensor Forward( FloatTensor input)
         {
-            return NN.Functional.Conv2d(input, _kernel, _bias, _stride_dims, _padding_dims, _dilation_dims, _group);
+            return input.Conv2d(_kernel, _bias, _stride_dims, _padding_dims, _dilation_dims, _group,_transposed);
         }
 
     }

@@ -222,6 +222,95 @@ namespace OpenMined.Syft.Tensor
             return result;
         }
 
+        public FloatTensor Conv2d(FloatTensor kernel, FloatTensor bias, int[] stride, int[] padding, int[] dilation, int group, bool transposed=false)
+        {
+            //            if (this._shape1[1] != shape2[0])
+            //              throw new InvalidOperationException(String.Format("Matrix multiply not possible: {0} & {1}.", shape1[1], shape2[0]));
+
+
+            //            var result = inline ? this : this.emptyTensorCopy();
+            //in simplest case:
+            //Shape = [i,j,k,l] and kernel = [m,n,o] -> output [r,p,q] where p = k+1-m, q=l+1-n, r = j*o
+            int[] outShape = new int[4];
+            if (transposed)
+            {
+                outShape = new int[]{ Shape[0],//samples
+                    kernel.Shape[2] * group * Shape[1],//feautres
+                    Shape[2] + kernel.Shape[0] - 1,//conv dim1
+                    Shape[3] + kernel.Shape[1] - 1,//conv dim2
+                };
+            }
+            else
+            {
+                outShape = new int[] { Shape[0],//samples
+                    kernel.Shape[2] * group * Shape[1],//feautres
+                    Shape[2] - ( kernel.Shape[0] - 1 ),//conv dim1
+                    Shape[3] - ( kernel.Shape[1] - 1 ),//conv dim2
+                };
+            }
+            var result = new FloatTensor(controller, outShape,
+                //_shader: this.shader);
+                       _dataOnGpu: dataOnGpu,
+                       _autograd: autograd,
+                       _keepgrads: keepgrads//,
+                       //_creation_op: creation_op
+                       );
+
+            if (dataOnGpu)
+            {
+                throw new InvalidOperationException(
+                    "Go implement!");
+            }
+
+            //Shape = [i,j,k,l] and kernel = [m,n,o] -> output [i,r,p,q] where p = k+1-m, q=l+1-n, r = j*o
+            int k;
+            int l;
+            int r;
+            int p_min = 0;
+            int q_min = 0;
+            int p_max = outShape[2];
+            int q_max = outShape[3];
+            for (var i = 0; i < outShape[0]; i++)
+            {
+                for (var j = 0; j < Shape[1]; j++)
+                {
+                    for (var o = 0; o < kernel.Shape[2]; o++)
+                    {
+                        r = j * kernel.Shape[2] + o;//TODO: check logic
+                        for (var m = 0; m < kernel.Shape[0]; m++)
+                        {
+                            if (transposed) { p_min = m; p_max = Math.Min(outShape[2], m + Shape[2]); }
+                            for (var p = p_min; p < p_max; p++)
+                            {
+                                if (transposed) { k = p - m; }
+                                else { k = p + m; }
+
+                                for (var n = 0; n < kernel.Shape[1]; n++)
+                                {
+                                    if (transposed) {q_min = n; q_max = Math.Min(outShape[3], n + Shape[3]); }
+                                    for (var q = q_min; q < q_max; q++)
+                                    {
+                                        if (transposed) { l = q - n; }
+                                        else { l = q + n; }
+                                        /*
+                                        Debug.LogFormat("Populate: [{0},{1},{2},{3}]", i, r, p, q);
+                                        Debug.LogFormat("and with kernel: [{0},{1},{2}]", m, n, o);
+                                        Debug.LogFormat("kernel val: {0}", kernel[m, n, o]);
+                                        Debug.LogFormat("with input: [{0},{1},{2},{3}]", i, j, k, l);
+                                        Debug.LogFormat("input val: {0}", this[i, j, k, l]);
+                                        */
+                                        result[i, r, p, q] += this[i, j, k, l] * kernel[m, n, o];
+                                        //Debug.LogFormat("res current: {0}", result[i, r, p, q]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            return result;
+        }
+
         public FloatTensor Cos(bool inline = false)
         {
             if (dataOnGpu)

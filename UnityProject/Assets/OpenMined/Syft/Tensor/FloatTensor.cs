@@ -74,6 +74,7 @@ namespace OpenMined.Syft.Tensor
             if (_data != null && _shapeBuffer == null && _dataBuffer == null)
             {
                 InitCpu(_data: _data, _copyData: _copyData);
+                //TODO: Assert that data and shape are consistent
             }
             else if (_dataBuffer != null && _shapeBuffer != null && SystemInfo.supportsComputeShaders && _data == null)
             {
@@ -81,6 +82,7 @@ namespace OpenMined.Syft.Tensor
 
                 InitGpu(_shader, _dataBuffer, _shapeBuffer, _copyData);
                 initShaderKernels();
+                //TODO: Assert that data and shape are consistent
             }
             else
             {
