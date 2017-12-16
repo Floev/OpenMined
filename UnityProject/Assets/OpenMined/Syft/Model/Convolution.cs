@@ -3,7 +3,7 @@ using OpenMined.Network.Controllers;
 //using OpenMined.Network.Utils;
 using OpenMined.Syft.Tensor;
 //using OpenMined.Syft.NN;
-using UnityEngine;
+//using UnityEngine;
 using System.Linq;
 
 namespace OpenMined.Syft.Layer
@@ -39,7 +39,7 @@ namespace OpenMined.Syft.Layer
 
             this.controller = _controller;
 
-//            _in_dim = input;
+            //_in_dim = input;
             _out_dim = output;
             _kernel_dims = kernel;
             _stride_dims = stride;
@@ -72,6 +72,5 @@ namespace OpenMined.Syft.Layer
         {
             return input.Conv2d(_kernel, _bias, _stride_dims, _padding_dims, _dilation_dims, _group,_transposed);
         }
-
     }
 }
