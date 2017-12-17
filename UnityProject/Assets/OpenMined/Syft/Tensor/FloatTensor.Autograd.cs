@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace OpenMined.Syft.Tensor
 {
@@ -123,6 +124,7 @@ namespace OpenMined.Syft.Tensor
 			    // override waiting for children if "backprop" was called on this variable directly
 			    if (this.creators != null && this.creators.Count > 0 && (grad_origin == null || AllChildrenGradsAccountedFor()))
 			    {
+                    //Debug.LogFormat("Backprop {0}", creation_op);
 				    if (creation_op == "add_elem")
 				    {
 					    creators[0].Backward(grad.Copy(), this);
@@ -145,12 +147,19 @@ namespace OpenMined.Syft.Tensor
 				    }
 				    else if (creation_op == "mm")
 				    {
-					    creators[0].Backward(grad.MM(creators[1].Transpose()).Transpose(), this);
-					    creators[1].Backward(grad.Transpose().MM(creators[0]).Transpose(), this);
-					    /*creators [0].Backward (creators [1].MM (grad.Transpose ()), this);
+                        /*
+                        Debug.LogFormat("MM grad dims {0}x{1}", grad.Shape[0], grad.Shape[1]);
+                        Debug.LogFormat("MM arg1 dims {0}x{1}", creators[0].Shape[0], creators[0].Shape[1]);
+                        Debug.LogFormat("MM arg2 dims {0}x{1}", creators[1].Shape[0], creators[1].Shape[1]);
+                        */
+                        creators[0].Backward(grad.MM(creators[1].Transpose()), this);
+                        creators[1].Backward(creators[0].Transpose().MM(grad), this);
+                        /*creators[0].Backward(grad.MM(creators[1].Transpose()).Transpose(), this);
+					    creators[1].Backward(grad.Transpose().MM(creators[0]).Transpose(), this);*/
+                        /*creators [0].Backward (creators [1].MM (grad.Transpose ()), this);
 					    creators [1].Backward (creators [0].Transpose ().MM (grad), this);*/
-				    }
-				    else if (creation_op == "sigmoid")
+                    }
+                    else if (creation_op == "sigmoid")
 				    {
 					    FloatTensor c = this.Copy();
 					    c.autograd = false;

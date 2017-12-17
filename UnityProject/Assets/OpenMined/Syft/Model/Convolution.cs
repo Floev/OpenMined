@@ -27,7 +27,7 @@ namespace OpenMined.Syft.Layer
             int[] stride = null, int[] padding = null, int[] dilation = null, int group = 1, bool bias = false, bool transposed = false,
             float[] kernelData=null)
         {
-            init();
+            init("conv2d");
             if (stride == null)
                 stride = new int[] { 1, 1 };
             if (kernel == null)

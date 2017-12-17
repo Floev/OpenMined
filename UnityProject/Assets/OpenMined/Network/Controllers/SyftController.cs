@@ -106,7 +106,10 @@ namespace OpenMined.Network.Controllers
 						if (msgObj.objectIndex == 0 && msgObj.functionCall == "create")
 						{
 							FloatTensor tensor = new FloatTensor(this, _shape: msgObj.shape, _data: msgObj.data, _shader: this.Shader);
-							Debug.LogFormat("<color=magenta>createTensor:{1}</color> {0}", string.Join(", ", tensor.Data), tensor.Id);
+                            string ctnd = "";
+                            if (tensor.Data.Length > 20)
+                                ctnd = String.Format(", ... (size {0})", tensor.Data.Length);
+                            Debug.LogFormat("<color=magenta>createTensor:{0}</color> {1}{2}", tensor.Id, string.Join(", ", tensor.Data.Take(10)), ctnd);
 							return tensor.Id.ToString();
 						}
 						else if (msgObj.objectIndex > tensors.Count)
@@ -156,20 +159,21 @@ namespace OpenMined.Network.Controllers
                                 Sigmoid model = new Sigmoid(this);
                                 return model.Id.ToString();
                             }
-                            else
-                            {
-                                Model model = this.getModel(msgObj.objectIndex);
-                                return model.ProcessMessage(msgObj, this);
-                            }
                         }
-                        return "hello";
-					}
-					case "controller":
+                        else
+                        {
+                            Model model = this.getModel(msgObj.objectIndex);
+                            return model.ProcessMessage(msgObj, this);
+                        }
+                        return "Unity Error: SyftController.processMessage: Command not found:" + msgObj.objectType + ":" + msgObj.functionCall;
+                    }
+                    case "controller":
 					{
 						if (msgObj.functionCall == "num_tensors")
 						{
 							return tensors.Count + "";
-						} else if (msgObj.functionCall == "num_models")
+						}
+                        else if (msgObj.functionCall == "num_models")
 						{
 							return models.Count + "";
 						}
