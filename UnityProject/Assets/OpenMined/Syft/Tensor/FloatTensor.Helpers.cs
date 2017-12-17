@@ -28,7 +28,9 @@ namespace OpenMined.Syft.Tensor
             {
                 if (shape[i] != tensor.Shape[i])
                 {
-                    throw new InvalidOperationException("Tensors cannot be added since they have different shapes.");
+                    throw new InvalidOperationException(
+                        String.Format("Tensors cannot be added since they have different shapes: ({0}) and ({1})", 
+                        String.Join(",", shape), String.Join(",", tensor.Shape)));
                 }
             }
         }

@@ -685,17 +685,14 @@ namespace OpenMined.Syft.Tensor
                     var result = ShapeTensor();
                     return result.id.ToString();
                 }
-
                 case "sub_scalar":
                 {
-                    Debug.LogFormat("sub_scalar");
                     FloatTensor result = Sub(float.Parse(msgObj.tensorIndexParams[0]));
 
                     return result.Id + "";
                 }
                 case "sub_scalar_":
                 {
-                    Debug.LogFormat("sub_scalar_");
                     this.Sub(float.Parse(msgObj.tensorIndexParams[0]), inline: true);
                     return this.id + "";
                 }
@@ -738,27 +735,22 @@ namespace OpenMined.Syft.Tensor
                     var result = Transpose();
                     return result.Id.ToString();
                 }
-
                 case "triu":
                 {
-                    var K = int.Parse(msgObj.tensorIndexParams[0]);
                     var result = Copy();
-                    result.Triu_(K);
+                    result.Triu_(int.Parse(msgObj.tensorIndexParams[0]));
                     return result.Id.ToString();
                 }
                 case "triu_":
                 {
-                    var K = int.Parse(msgObj.tensorIndexParams[0]);
-                    Triu_(K);
+                    Triu_(int.Parse(msgObj.tensorIndexParams[0]));
                     return Id.ToString();
                 }
-
                 case "trunc":
                 {
                     var result = Trunc();
                     return result.Id.ToString();
                 }
-
                 case "view":
                 {
                     int[] new_dims = new int[msgObj.tensorIndexParams.Length];
@@ -769,7 +761,6 @@ namespace OpenMined.Syft.Tensor
                     var result = View(new_dims);
                     return result.Id.ToString();
                 }
-
                 case "view_":
                 {
                     int[] new_dims = new int[msgObj.tensorIndexParams.Length];
@@ -786,7 +777,6 @@ namespace OpenMined.Syft.Tensor
                     var result = ViewAs(tensor_1, false);
                     return result.Id.ToString();
                 }
-
                 case "view_as_":
                 {
                     var tensor_1 = ctrl.getTensor(int.Parse(msgObj.tensorIndexParams[0]));
