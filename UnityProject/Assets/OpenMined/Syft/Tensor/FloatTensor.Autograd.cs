@@ -159,11 +159,8 @@ namespace OpenMined.Syft.Tensor
 				    else if (creation_op == "mm")
 				    {
 
-					    creators[0].Backward(grad.MM(creators[1].Transpose()).Transpose(), this);
-					    creators[1].Backward(grad.Transpose().MM(creators[0]).Transpose(), this);
-
-					    /*creators [0].Backward (creators [1].MM (grad.Transpose ()), this);
-					    creators [1].Backward (creators [0].Transpose ().MM (grad), this);*/
+                        creators[0].Backward(grad.MM(creators[1].Transpose()), this);
+                        creators[1].Backward(creators[0].Transpose().MM(grad), this);
 
 				    }
 				    else if (creation_op == "sigmoid")
