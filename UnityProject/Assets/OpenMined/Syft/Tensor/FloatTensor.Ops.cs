@@ -701,14 +701,16 @@ namespace OpenMined.Syft.Tensor
             return result;
         }
 
-        public FloatTensor Rsqrt()
-        {
+        public FloatTensor Rsqrt(bool inline = false)
+        {   
+            var result = inline ? this : this.emptyTensorCopy();
+
             if (dataOnGpu)
             {
-                return RsqrtGPU();
+                if (!inline) return RsqrtGPU();
+                RsqrtGPU_();
+                return this;
             }
-
-            var result = new FloatTensor(_controller: controller, _shape: shape, _shader: this.shader);
             result.Data = data.AsParallel().Select(x => 1 / (float) Math.Sqrt(x)).ToArray();
             return result;
         }
@@ -990,21 +992,22 @@ namespace OpenMined.Syft.Tensor
                     shapeBuffer.Release();
                     shapeBuffer = new ComputeBuffer(shape.Length, sizeof(int));
                     shapeBuffer.SetData(shape);
+                    
+                    setStridesAndCheckShape();
                 }
                 else
                 {
-                    result = new FloatTensor(_controller: controller, _shape: new_shape, _shader: this.shader);
-                    result.Gpu(shader);
-                    CopyBuffer(dataBuffer, result.DataBuffer);
+                    result = new FloatTensor(_controller: controller, _shape: new_shape, _shader: this.shader, _copyData: false);
                 }
             }
             else if (inline)
             {
                 shape = new_shape;
+                setStridesAndCheckShape();
             }
             else
             {
-                result = new FloatTensor(_controller: controller, _data: data, _shape: new_shape, _shader: shader);
+                result = new FloatTensor(_controller: controller, _data: data, _shape: new_shape, _shader: shader, _copyData: false);
             }
             return result;
         }
@@ -1101,7 +1104,6 @@ namespace OpenMined.Syft.Tensor
             Array.Clear(data, 0, size);
         }
 
-
         public FloatTensor Squeeze(int dim = -1, bool inline = false)
         {
             if (!IsContiguous()) {
@@ -1143,7 +1145,7 @@ namespace OpenMined.Syft.Tensor
             {
                 if (!inline)
                 {
-                    result = new FloatTensor(_controller: controller, _data: data, _shape: shape, _shader: shader);
+                    result = new FloatTensor(_controller: controller, _data: data, _shape: shape, _shader: shader, _copyData: false);
                 }
             }
             else

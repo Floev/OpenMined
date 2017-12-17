@@ -608,7 +608,6 @@ namespace OpenMined.Syft.Tensor
                 }
                 case "sub_elem":
                 {
-                    Debug.LogFormat("sub_elem");
                     var tensor_1 = ctrl.getTensor(int.Parse(msgObj.tensorIndexParams[0]));
                     var result = this.Sub(tensor_1);
 
@@ -616,7 +615,6 @@ namespace OpenMined.Syft.Tensor
                 }
                 case "sub_elem_":
                 {
-                    Debug.LogFormat("sub_elem_");
                     var tensor_1 = ctrl.getTensor(int.Parse(msgObj.tensorIndexParams[0]));
                     this.Sub(tensor_1, inline: true);
                     return this.id + "";
@@ -635,6 +633,11 @@ namespace OpenMined.Syft.Tensor
                 {
                     var result = Rsqrt();
                     return result.Id.ToString();
+                }
+                case "rsqrt_":
+                {
+                    Rsqrt(inline: true);
+                    return Id.ToString();
                 }
                 case "print":
                 {

@@ -162,10 +162,10 @@ namespace OpenMined.Syft.Tensor
 					    self_nograd.autograd = false;
 					    creators[0].Backward(self_nograd.Mul(grad).Mul(creators[1].Data[0]), this);
 				    }
-                    
-//					if (!keepgrads) {
-//						ctrl.RemoveTensor (grad.id);
-//					}
+
+					/*if (!keepgrads) {
+						controller.RemoveTensor (grad.id);
+					}*/
 			    }
 		    }
 	    }

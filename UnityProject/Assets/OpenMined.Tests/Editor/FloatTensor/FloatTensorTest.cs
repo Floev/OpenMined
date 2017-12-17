@@ -1590,6 +1590,25 @@ namespace OpenMined.Tests.Editor.FloatTensor
         }
 
         [Test]
+        public void Rsqrt_()
+        {
+            float[] data1 = {1, 2, 3, 4};
+            int[] shape1 = {4};
+            var tensor1 = new Syft.Tensor.FloatTensor(_controller: ctrl, _data: data1, _shape: shape1);
+
+            float[] data2 = {1, (float) 0.7071068, (float) 0.5773503, (float) 0.5};
+            int[] shape2 = {4};
+            var expectedExpTensor = new Syft.Tensor.FloatTensor(_controller: ctrl, _data: data2, _shape: shape2);
+
+            tensor1.Rsqrt(inline: true);
+
+            for (int i = 0; i < tensor1.Size; i++)
+            {
+                Assert.AreEqual(expectedExpTensor[i], tensor1[i], 1e-3);
+            }
+        }
+
+        [Test]
         public void Sigmoid()
         {
             float[] data1 = {0.0f};
@@ -2380,6 +2399,42 @@ namespace OpenMined.Tests.Editor.FloatTensor
             {
                 Assert.AreEqual(expectedTensor[i], truncatedTensor[i]);
             }
+        }
+        
+		    [Test]
+		    public void View() {
+          float[] data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+          int[] shape = {4, 4};
+
+          var tensor = new Syft.Tensor.FloatTensor(_controller: ctrl, _data: data, _shape: shape);
+
+          int[] newShape = {2, 8};
+          
+          var newTensor = tensor.View(newShape);
+          
+          Assert.AreEqual(2, newTensor.Shape[0]);
+          Assert.AreEqual(8, newTensor.Shape[1]);
+          
+          Assert.AreEqual(8, newTensor.Strides[0]);
+          Assert.AreEqual(1, newTensor.Strides[1]);
+        }
+
+        [Test]
+        public void View_() {
+          float[] data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+          int[] shape = {4, 4};
+
+          var tensor = new Syft.Tensor.FloatTensor(_controller: ctrl, _data: data, _shape: shape);
+
+          int[] newShape = {2, 8};
+          
+          tensor.View(newShape, inline: true);
+          
+          Assert.AreEqual(2, tensor.Shape[0]);
+          Assert.AreEqual(8, tensor.Shape[1]);
+          
+          Assert.AreEqual(8, tensor.Strides[0]);
+          Assert.AreEqual(1, tensor.Strides[1]);
         }
 
         [Test]

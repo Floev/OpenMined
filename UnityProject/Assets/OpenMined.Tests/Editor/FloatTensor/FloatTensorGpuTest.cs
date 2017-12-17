@@ -1284,6 +1284,25 @@ namespace OpenMined.Tests
         }
 
         [Test]
+        public void Rsqrt_()
+        {
+          float[] data1 = {1, 2, 3, 4};
+          int[] shape1 = { 4 };
+          var tensor1 = new FloatTensor(_controller: ctrl, _data: data1, _shape: shape1);
+          tensor1.Gpu(shader);
+
+          float[] data2 = { 1, (float) 0.7071068, (float) 0.5773503, (float) 0.5};
+          int[] shape2 = { 4 };
+          var tensorRsqrt = new FloatTensor(_controller: ctrl, _data: data2, _shape: shape2);
+          tensorRsqrt.Gpu(shader);
+
+          tensor1.Rsqrt(inline: true);
+
+          AssertApproximatelyEqualTensorsData(tensorRsqrt, tensor1);
+        }
+
+
+        [Test]
         public void Sigmoid()
         {
             float[] data1 = {0.0f};

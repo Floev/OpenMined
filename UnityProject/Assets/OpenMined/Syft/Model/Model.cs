@@ -22,12 +22,15 @@ namespace OpenMined.Syft.Layer
         // indices for models used in forward prediction (which themselves can contain weights)
         protected List<int> models;
 
+        protected string layer_type;
+        
         protected SyftController controller;
         
-        protected void init()
+        protected void init(string layer_type)
         {
             parameters = new List<int>();
             models = new List<int>();
+            this.layer_type = layer_type;
         }
         
         public virtual FloatTensor Forward(FloatTensor input)
@@ -36,6 +39,25 @@ namespace OpenMined.Syft.Layer
             throw new NotImplementedException();
         }
 
+        public string getLayerType()
+        {
+            return layer_type;
+        }
+        
+        public int getModel(int i)
+        {
+            if(i > 0 && i < models.Count)
+                return models[i];
+            throw new ArgumentOutOfRangeException("Sub-model " + i + " does not exist.");
+        }
+
+        public int getParameter(int i)
+        {
+            if(i > 0 && i < parameters.Count) 
+                return parameters[i];
+            throw new ArgumentOutOfRangeException("Parameter " + i + " does not exist.");
+        }
+        
         public List<int> getParameters()
         {
             return parameters;
@@ -77,6 +99,23 @@ namespace OpenMined.Syft.Layer
                         
                     }
                     return out_str;
+                }
+                case "models":
+                {
+                    string out_str = "";
+
+                    for (int i = 0; i < models.Count; i++)
+                    {
+                        
+                        out_str += models[i].ToString() + ",";
+                        
+                    }
+                    return out_str;
+
+                }
+                case "layer_type":
+                {
+                    return layer_type;
                 }
             }
 

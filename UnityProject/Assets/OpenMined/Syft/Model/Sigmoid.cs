@@ -9,7 +9,7 @@ namespace OpenMined.Syft.Layer
 		
         public Sigmoid (SyftController controller)
         {
-            init();
+            init("sigmoid");
             
             #pragma warning disable 420
             id = System.Threading.Interlocked.Increment(ref nCreated);

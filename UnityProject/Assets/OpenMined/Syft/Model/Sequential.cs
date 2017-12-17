@@ -11,7 +11,7 @@ namespace OpenMined.Syft.Model
 		
         public Sequential (SyftController _controller)
         {
-            init();
+            init("sequential");
 
             this.controller = _controller;
             
