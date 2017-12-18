@@ -152,14 +152,12 @@ namespace OpenMined.Syft.Tensor
                         Debug.LogFormat("MM arg1 dims {0}x{1}", creators[0].Shape[0], creators[0].Shape[1]);
                         Debug.LogFormat("MM arg2 dims {0}x{1}", creators[1].Shape[0], creators[1].Shape[1]);
                         */
+
                         creators[0].Backward(grad.MM(creators[1].Transpose()), this);
                         creators[1].Backward(creators[0].Transpose().MM(grad), this);
-                        /*creators[0].Backward(grad.MM(creators[1].Transpose()).Transpose(), this);
-					    creators[1].Backward(grad.Transpose().MM(creators[0]).Transpose(), this);*/
-                        /*creators [0].Backward (creators [1].MM (grad.Transpose ()), this);
-					    creators [1].Backward (creators [0].Transpose ().MM (grad), this);*/
-                    }
-                    else if (creation_op == "sigmoid")
+
+				    }
+				    else if (creation_op == "sigmoid")
 				    {
 					    FloatTensor c = this.Copy();
 					    c.autograd = false;

@@ -536,10 +536,20 @@ void RemainderScalar (uint3 id: SV_DispatchThreadID) {
 	RemainderScalarResult[id.x] = fmod(RemainderScalarData[id.x], RemainderScalarScalar[0]);
 }
 
+#pragma kernel Rsqrt_
+
+RWStructuredBuffer<float> RsqrtData_;
+
+[numthreads(4,1,1)]
+void Rsqrt_ (uint3 id: SV_DispatchThreadID) {
+	RsqrtData_[id.x] = rsqrt(RsqrtData_[id.x]);
+}
+
 #pragma kernel Rsqrt
 
 RWStructuredBuffer<float> RsqrtData;
 RWStructuredBuffer<float> RsqrtResult;
+
 [numthreads(4,1,1)]
 void Rsqrt (uint3 id: SV_DispatchThreadID) {
 	RsqrtResult[id.x] = rsqrt(RsqrtData[id.x]);
