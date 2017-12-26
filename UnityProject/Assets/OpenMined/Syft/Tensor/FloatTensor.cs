@@ -264,6 +264,7 @@ namespace OpenMined.Syft.Tensor
                 }
                 case "backward":
                 {
+//                    Debug.LogFormat("Nb params: {0}", msgObj.tensorIndexParams.Length);
                     if (msgObj.tensorIndexParams.Length > 0)
                     {
                         var grad = ctrl.getTensor(int.Parse(msgObj.tensorIndexParams[0]));

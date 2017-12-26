@@ -72,11 +72,12 @@ namespace OpenMined.Network.Controllers
 			return (tensor.Id);
 		}
 		
-		public int addModel (Model model)
-		{
-			models.Add (model.Id, model);
-			return (model.Id);
-		}
+        public int addModel (Model model)
+        {
+            //Debug.LogFormat("<color=green>Adding Model {0}</color>", model.Id);
+            models.Add (model.Id, model);
+            return (model.Id);
+        }
 
 		public FloatTensor createZerosTensorLike(FloatTensor tensor) {
 			FloatTensor new_tensor = tensor.Copy ();
@@ -119,8 +120,9 @@ namespace OpenMined.Network.Controllers
 						else
 						{
 							FloatTensor tensor = this.getTensor(msgObj.objectIndex);
-							// Process message's function
-							return tensor.ProcessMessage(msgObj, this);
+                            // Process message's function
+                            //Debug.LogFormat("<color=magenta>Run {0} on {1}</color>", msgObj.functionCall,tensor.Id);
+                            return tensor.ProcessMessage(msgObj, this);
 						}
 					}
                     case "model":
@@ -136,12 +138,12 @@ namespace OpenMined.Network.Controllers
                             if (model_type == "conv2d")
                             {
                                 int[] args = msgObj.tensorIndexParams.Skip(1).Select(s => int.Parse(s)).ToArray();
-                                int[] kernel = { args[3], args[4] };
-                                int[] stride = { args[5], args[6] };
-                                int[] padding = { args[7], args[8] };
-                                int[] dilation = { args[9], args[10] };
-                                bool bias = args[12] != 0;
-                                Conv2d model = new Conv2d(this, args[0], args[1], kernel, stride, padding, dilation, args[11], bias);
+                                int[] kernel = { args[2], args[3] };
+                                int[] stride = { args[4], args[5] };
+                                int[] padding = { args[6], args[7] };
+                                int[] dilation = { args[8], args[9] };
+                                bool bias = args[11] != 0;
+                                Conv2d model = new Conv2d(this, args[0], args[1], kernel, stride, padding, dilation, args[10], bias);
                                 return model.Id.ToString();
                             }
                             if (model_type == "linear")
@@ -157,6 +159,13 @@ namespace OpenMined.Network.Controllers
                             else if (model_type == "sigmoid")
                             {
                                 Sigmoid model = new Sigmoid(this);
+                                return model.Id.ToString();
+                            }
+                            else if (model_type == "view")
+                            {
+                                int[] args = msgObj.tensorIndexParams.Skip(1).Select(s => int.Parse(s)).ToArray();
+
+                                View model = new View(this, args);
                                 return model.Id.ToString();
                             }
                         }

@@ -230,7 +230,8 @@ namespace OpenMined.Syft.Tensor
             return result;
         }
 
-        public FloatTensor Conv2d(FloatTensor kernel, FloatTensor bias, int[] stride, int[] padding, int[] dilation, int group, bool transposed=false)
+//        public FloatTensor Conv2d(FloatTensor kernel, FloatTensor bias, int[] stride, int[] padding, int[] dilation, int group, bool transposed = false)
+        public FloatTensor Conv2d(FloatTensor kernel, FloatTensor bias, FloatTensor stride, FloatTensor padding, FloatTensor dilation, FloatTensor group, bool transposed = false)
         {
             //            if (this._shape1[1] != shape2[0])
             //              throw new InvalidOperationException(String.Format("Matrix multiply not possible: {0} & {1}.", shape1[1], shape2[0]));
@@ -238,22 +239,26 @@ namespace OpenMined.Syft.Tensor
 
             //            var result = inline ? this : this.emptyTensorCopy();
             //in simplest case:
-            //Shape = [i,j,k,l] and kernel = [m,n,o] -> output [r,p,q] where p = k+1-m, q=l+1-n, r = j*o
+            //Shape = [i,j,k,l] and kernel = [o,m,n] -> output [i,r,p,q] where p = k+1-m, q=l+1-n, r = j*o
+
+            Debug.LogFormat("Conv2d inputs: {0},{1},{2},{3},{4},{5},{6},{7}",this.Print(), kernel.Print(), bias.Print(), stride.Print(), padding.Print(), dilation.Print(), group.Print(), transposed);
+
             int[] outShape = new int[4];
             if (transposed)
             {
-                outShape = new int[]{ Shape[0],//samples
-                    kernel.Shape[2] * group * Shape[1],//feautres
-                    Shape[2] + kernel.Shape[0] - 1,//conv dim1
-                    Shape[3] + kernel.Shape[1] - 1,//conv dim2
+                outShape = new int[] { Shape[0],//samples
+                    kernel.Shape[0] * Shape[1] / (int) group[0],//feautres
+                    Shape[2] + kernel.Shape[1] - 1,//conv dim1
+                    Shape[3] + kernel.Shape[2] - 1,//conv dim2
                 };
             }
             else
             {
+//                Debug.LogFormat("Shape {0}, kerShap {1}", String.Join(",", Shape), String.Join(",", kernel.Shape));
                 outShape = new int[] { Shape[0],//samples
-                    kernel.Shape[2] * group * Shape[1],//feautres
-                    Shape[2] - ( kernel.Shape[0] - 1 ),//conv dim1
-                    Shape[3] - ( kernel.Shape[1] - 1 ),//conv dim2
+                    kernel.Shape[0] * Shape[1] / (int) group[0] ,//feautres
+                    Shape[2] - ( kernel.Shape[1] - 1 ),//conv dim1
+                    Shape[3] - ( kernel.Shape[2] - 1 ),//conv dim2
                 };
             }
             var result = new FloatTensor(controller, outShape,
@@ -270,7 +275,7 @@ namespace OpenMined.Syft.Tensor
                     "Go implement!");
             }
 
-            //Shape = [i,j,k,l] and kernel = [m,n,o] -> output [i,r,p,q] where p = k+1-m, q=l+1-n, r = j*o
+            //Shape = [i,j,k,l] and kernel = [o,m,n] -> output [i,r,p,q] where p = k+1-m, q=l+1-n, r = j*o
             int k;
             int l;
             int r;
@@ -282,10 +287,10 @@ namespace OpenMined.Syft.Tensor
             {
                 for (var j = 0; j < Shape[1]; j++)
                 {
-                    for (var o = 0; o < kernel.Shape[2]; o++)
+                    for (var o = 0; o < kernel.Shape[0]; o++)
                     {
-                        r = j * kernel.Shape[2] + o;//TODO: check logic
-                        for (var m = 0; m < kernel.Shape[0]; m++)
+                        r = (j * kernel.Shape[0] + o ) % outShape[1];//TODO: check logic
+                        for (var m = 0; m < kernel.Shape[1]; m++)
                         {
                             if (transposed) { p_min = m; p_max = Math.Min(outShape[2], m + Shape[2]); }
                             for (var p = p_min; p < p_max; p++)
@@ -293,7 +298,7 @@ namespace OpenMined.Syft.Tensor
                                 if (transposed) { k = p - m; }
                                 else { k = p + m; }
 
-                                for (var n = 0; n < kernel.Shape[1]; n++)
+                                for (var n = 0; n < kernel.Shape[2]; n++)
                                 {
                                     if (transposed) {q_min = n; q_max = Math.Min(outShape[3], n + Shape[3]); }
                                     for (var q = q_min; q < q_max; q++)
@@ -302,12 +307,12 @@ namespace OpenMined.Syft.Tensor
                                         else { l = q + n; }
                                         /*
                                         Debug.LogFormat("Populate: [{0},{1},{2},{3}]", i, r, p, q);
-                                        Debug.LogFormat("and with kernel: [{0},{1},{2}]", m, n, o);
-                                        Debug.LogFormat("kernel val: {0}", kernel[m, n, o]);
-                                        Debug.LogFormat("with input: [{0},{1},{2},{3}]", i, j, k, l);
+                                        Debug.LogFormat("with kernel: [{0},{1},{2}]",o, m, n);
+                                        Debug.LogFormat("kernel val: {0}", kernel[o,m, n]);
+                                        Debug.LogFormat("and with input: [{0},{1},{2},{3}]", i, j, k, l);
                                         Debug.LogFormat("input val: {0}", this[i, j, k, l]);
                                         */
-                                        result[i, r, p, q] += this[i, j, k, l] * kernel[m, n, o];
+                                        result[i, r, p, q] += this[i, j, k, l] * kernel[o,m, n];
                                         //Debug.LogFormat("res current: {0}", result[i, r, p, q]);
                                     }
                                 }
@@ -316,6 +321,18 @@ namespace OpenMined.Syft.Tensor
                     }
                 }
             };
+
+            if (autograd)
+            {
+                HookAutograd(ref result, "conv2d", kernel, bias, stride, padding, dilation, group);
+                kernel.children.Add(result.Id, 0);
+                //bias.children.Add(result.Id, 0);
+                //stride.children.Add(result.Id, 0);
+                //padding.children.Add(result.Id, 0);
+                //dilation.children.Add(result.Id, 0);
+                //group.children.Add(result.Id, 0);
+            }
+
             return result;
         }
 
@@ -982,7 +999,9 @@ namespace OpenMined.Syft.Tensor
             }
 
             var result = this;
-            if (newSize != size) return result;
+            //if (newSize != size) return result;//Why this? Either throw or make it an feature to view parts/several copies
+            if (newSize != size)
+                throw new InvalidOperationException(String.Format("Unequal shapes, view will miss data. Old {0}, new {1}",Size,newSize));
             if (dataOnGpu)
             {
                 if (inline)
@@ -1009,6 +1028,12 @@ namespace OpenMined.Syft.Tensor
             {
                 result = new FloatTensor(_controller: controller, _data: data, _shape: new_shape, _shader: shader, _copyData: false);
             }
+
+            if (autograd)
+            {
+                HookAutograd(ref result, "view");
+            }
+
             return result;
         }
 

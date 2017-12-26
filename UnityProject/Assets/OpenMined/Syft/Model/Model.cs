@@ -18,7 +18,7 @@ namespace OpenMined.Syft.Layer
 
         // indices for weights used in forward prediction (not inluding those in models array)
         protected List<int> parameters;
-        
+
         // indices for models used in forward prediction (which themselves can contain weights)
         protected List<int> models;
 

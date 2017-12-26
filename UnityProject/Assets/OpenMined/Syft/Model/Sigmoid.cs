@@ -4,18 +4,38 @@ using OpenMined.Syft.Tensor;
 
 namespace OpenMined.Syft.Layer
 {
-    public class Sigmoid: Model
+    public class View : Model
     {
-		
-        public Sigmoid (SyftController controller)
+        private int[] _outShape;
+
+        public View(SyftController controller, int[] outShape )
         {
-            init("sigmoid");
+            init("view");
+            _outShape = new int[outShape.Length];
+            outShape.CopyTo(_outShape, 0);
             
-            #pragma warning disable 420
+#pragma warning disable 420
             id = System.Threading.Interlocked.Increment(ref nCreated);
             controller.addModel(this);
         }
-        
+
+        public override FloatTensor Forward(FloatTensor input)
+        {
+            return input.View(_outShape);
+        }
+    }
+
+    public class Sigmoid : Model
+    {
+        public Sigmoid(SyftController controller)
+        {
+            init("sigmoid");
+
+#pragma warning disable 420
+            id = System.Threading.Interlocked.Increment(ref nCreated);
+            controller.addModel(this);
+        }
+
         public override FloatTensor Forward(FloatTensor input)
         {
             return input.Sigmoid();
