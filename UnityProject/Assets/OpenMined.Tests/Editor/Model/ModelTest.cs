@@ -7,7 +7,6 @@ using NUnit.Framework;
 using OpenMined.Network.Controllers;
 using OpenMined.Syft.Layer;
 using OpenMined.Syft.Layer.Loss;
-using OpenMined.Syft.Model;
 using OpenMined.Syft.Tensor;
 using UnityEngine;
 

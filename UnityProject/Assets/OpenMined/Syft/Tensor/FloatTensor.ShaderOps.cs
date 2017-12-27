@@ -45,6 +45,8 @@ namespace OpenMined.Syft.Tensor
         [SerializeField] private static int PowElemKernel_;
         [SerializeField] private static int PowScalarKernel;
         [SerializeField] private static int PowElemKernel;
+        [SerializeField] private static int ReciprocalKernel;
+        [SerializeField] private static int ReciprocalKernel_;
         [SerializeField] private static int RemainderElemKernel;
         [SerializeField] private static int RemainderElemKernel_;
         [SerializeField] private static int RemainderScalarKernel;
@@ -60,6 +62,7 @@ namespace OpenMined.Syft.Tensor
         [SerializeField] private static int SinKernel;
         [SerializeField] private static int SinKernel_;
         [SerializeField] private static int SqrtKernel;
+        [SerializeField] private static int SqrtKernel_;
         [SerializeField] private static int SubScalarKernel_;
         [SerializeField] private static int SubElemKernel_;
         [SerializeField] private static int SubScalarKernel;
@@ -73,7 +76,6 @@ namespace OpenMined.Syft.Tensor
         [SerializeField] private static int SinhKernel_;
         [SerializeField] private static int TriuKernel_;
         [SerializeField] private static int TruncKernel;
-        [SerializeField] private static int ZeroKernel_;
 
         public void initShaderKernels()
         {
@@ -128,6 +130,8 @@ namespace OpenMined.Syft.Tensor
             PowElemKernel = shader.FindKernel("PowElem");
             NegateKernel = shader.FindKernel("Negate");
             NegateKernel_ = shader.FindKernel("Negate_");
+            ReciprocalKernel = shader.FindKernel("Reciprocal");
+            ReciprocalKernel_ = shader.FindKernel("Reciprocal_");
             RsqrtKernel = shader.FindKernel("Rsqrt");
             RsqrtKernel_ = shader.FindKernel("Rsqrt_");
             // PowKernel = shader.FindKernel ("Pow");
@@ -139,6 +143,7 @@ namespace OpenMined.Syft.Tensor
             SinKernel = shader.FindKernel("Sin");
             SinKernel_ = shader.FindKernel("Sin_");
             SqrtKernel = shader.FindKernel("Sqrt");
+            SqrtKernel_ = shader.FindKernel("Sqrt_");
             SubScalarKernel_ = shader.FindKernel("SubScalar_");
             SubElemKernel_ = shader.FindKernel("SubElem_");
             SubScalarKernel = shader.FindKernel("SubScalar");
@@ -680,6 +685,24 @@ namespace OpenMined.Syft.Tensor
             }
         }
 
+        private FloatTensor ReciprocalGPU()
+        {
+            if (!dataOnGpu) return this;
+
+            var result = this.emptyTensorCopy();
+            shader.SetBuffer(ReciprocalKernel, "ReciprocalData", dataBuffer);
+            shader.SetBuffer(ReciprocalKernel, "ReciprocalResult", result.DataBuffer);
+            shader.Dispatch(ReciprocalKernel, size, 1, 1);
+
+            return result;
+        }
+
+        public void ReciprocalGPU_()
+        {
+            shader.SetBuffer(ReciprocalKernel_, "ReciprocalData_", dataBuffer);
+            shader.Dispatch(ReciprocalKernel_, this.size, 1, 1);
+        }
+
         public FloatTensor RsqrtGPU()
         {
             if (dataOnGpu)
@@ -812,6 +835,12 @@ namespace OpenMined.Syft.Tensor
             shader.Dispatch(SqrtKernel, size, 1, 1);
 
             return result;
+        }
+
+        public void SqrtGPU_()
+        {
+            shader.SetBuffer(SqrtKernel_, "SqrtData_", dataBuffer);
+            shader.Dispatch(SqrtKernel_, this.size, 1, 1);
         }
 
         public void SigmoidGPU_()
@@ -1053,12 +1082,6 @@ namespace OpenMined.Syft.Tensor
             return result;
         }
 
-
-        public void ZeroGPU_()
-        {
-            shader.SetBuffer(ZeroKernel_, "ZeroData_", dataBuffer);
-            shader.Dispatch(ZeroKernel_, this.size, 1, 1);
-        }
 
         public struct Dimensions
         {

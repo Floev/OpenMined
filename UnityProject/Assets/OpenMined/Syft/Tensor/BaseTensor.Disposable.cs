@@ -40,7 +40,7 @@ namespace OpenMined.Syft.Tensor
         ~BaseTensor()
         {
             Dispose(false);
-#pragma warning disable 420
+            #pragma warning disable 420
             System.Threading.Interlocked.Increment(ref nDeleted);
         }
     }

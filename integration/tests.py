@@ -487,6 +487,26 @@ def test_log1p_():
 
     # a does change when inlined
     np.testing.assert_almost_equal(expected, a.to_numpy(), decimal=5)
+    
+
+def test_reciprocal():
+    data = np.array([1., 2., 3., 4.])
+    expected = np.array([1., 0.5, 0.33333333, 0.25])
+    a = pytest.sc.FloatTensor(data)
+    b = a.reciprocal()
+
+    np.testing.assert_almost_equal(expected, b.to_numpy(), decimal=4)
+    # a doesn't change
+    np.testing.assert_array_equal(data, a.to_numpy())
+
+def test_reciprocal_():
+    data = np.array([1., 2., 3., 4.])
+    expected = np.array([1., 0.5, 0.33333333, 0.25])
+    a = pytest.sc.FloatTensor(data)
+    a.reciprocal_()
+
+    # a does change when inlined
+    np.testing.assert_almost_equal(expected, a.to_numpy(), decimal=4)
 
 
 def test_round():
@@ -529,6 +549,25 @@ def test_rsqrt_():
     # a does change when inlined
     np.testing.assert_almost_equal(expected, a.to_numpy(), decimal=4)
 
+def test_sqrt():
+    data = np.array([1., 2., 3., 4.])
+    expected = np.array([1., 1.41421356, 1.73205081, 2.])
+    a = pytest.sc.FloatTensor(data)
+    b = a.sqrt()
+
+    np.testing.assert_almost_equal(expected, b.to_numpy(), decimal=4)
+    # a doesn't change
+    np.testing.assert_array_equal(data, a.to_numpy())
+
+
+def test_sqrt_():
+    data = np.array([1., 2., 3., 4.])
+    expected = np.array([1., 1.41421356, 1.73205081, 2.])
+    a = pytest.sc.FloatTensor(data)
+    a.sqrt_()
+
+    # a does change when inlined
+    np.testing.assert_almost_equal(expected, a.to_numpy(), decimal=4)
 
 def test_trace():
     data = np.random.randn(17, 17).astype('float')

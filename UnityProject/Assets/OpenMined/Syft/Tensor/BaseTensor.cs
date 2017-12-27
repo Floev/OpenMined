@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using OpenMined.Network.Controllers;
 using UnityEngine;
+using OpenMined.Network.Utils;
 
 namespace OpenMined.Syft.Tensor
 {
@@ -25,16 +26,14 @@ namespace OpenMined.Syft.Tensor
 
         protected ComputeShader shader;
 
-        protected SyftController controller;
-
         #endregion
 
         #region Properties
 
-        public SyftController Controller
+        public ComputeShader Shader
         {
-            get { return controller; }
-            set { controller = value; }
+            get { return shader; }
+            set { shader = value; }
         }
 
         public T[] Data
@@ -164,5 +163,65 @@ namespace OpenMined.Syft.Tensor
         }
 
         #endregion
+        public void Zero_()
+        {
+            if (!IsContiguous())
+            {
+                throw new InvalidOperationException("Tensor must be contiguous, call Contiguous() to convert");
+            }
+
+            if (dataOnGpu)
+            {
+                ZeroGPU_();
+                return;
+            }
+
+            Array.Clear(data, 0, size);
+        }
+
+        public void ZeroGPU_()
+        {
+            shader.SetBuffer(ZeroKernel_, "ZeroData_", dataBuffer);
+            shader.Dispatch(ZeroKernel_, this.size, 1, 1);
+        }
+
+
+
+        public bool IsContiguous()
+        {
+            foreach (var stride in strides)
+            {
+                if (stride == 0)
+                {
+                    return false;
+                }
+            }
+
+            return strides[strides.Length - 1] == 1L;
+        }
+
+
+        public abstract string ProcessMessage(Command msgObj, SyftController ctrl);
+
+        public void setStridesAndCheckShape()
+        {
+            // Third: let's initialize our strides.
+            strides = new int[shape.Length];
+
+            // Fifth: we should check that the buffer's size matches our shape.
+            int acc = 1;
+            for (var i = shape.Length - 1; i >= 0; --i)
+            {
+                strides[i] = acc;
+                acc *= shape[i];
+            }
+
+            // Sixth: let's check to see that our shape and data sizes match.
+            size = acc;
+        }
+
+
+
+
     }
 }

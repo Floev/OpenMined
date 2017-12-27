@@ -3,12 +3,11 @@ using OpenMined.Network.Controllers;
 using OpenMined.Network.Utils;
 using OpenMined.Syft.Tensor;
 
-namespace OpenMined.Syft.Model
+namespace OpenMined.Syft.Layer
 {
-	public class Linear: Layer.Model
+	public class Linear: Layer
 	{
 
-		
 		private int _input;
 		private int _output;
 
@@ -26,11 +25,11 @@ namespace OpenMined.Syft.Model
 			
 			int[] weightShape = { input, output };
 			var weights = controller.RandomWeights(input * output);
-			_weights = new FloatTensor(controller, _shape: weightShape, _data: weights, _autograd: true, _keepgrads: true);
+			_weights = controller.floatTensorFactory.Create(_shape: weightShape, _data: weights, _autograd: true, _keepgrads: true);
 
 			// TODO: add bias when broadcast is available
 			int[] biasShape = {output};
-			_bias = new FloatTensor(controller, biasShape, _autograd: true);
+			_bias = controller.floatTensorFactory.Create(_shape:biasShape, _autograd: true);
 
 			parameters.Add(_weights.Id);
 			//parameters.Add(_bias.Id);
@@ -41,9 +40,14 @@ namespace OpenMined.Syft.Model
 
 		}
 
-		public override FloatTensor Forward(FloatTensor input)
+        public override FloatTensor Forward(FloatTensor input)
 		{
-			return input.MM(_weights);
+			
+			FloatTensor output = input.MM(_weights);
+			activation = output.Id;
+		
+			
+			return output;
 		}
 
 	}

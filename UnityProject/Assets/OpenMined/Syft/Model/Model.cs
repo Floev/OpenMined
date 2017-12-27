@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using OpenMined.Network.Controllers;
@@ -7,7 +8,7 @@ using OpenMined.Syft.Tensor;
 
 namespace OpenMined.Syft.Layer
 {
-    public class Model
+    public abstract class Model
     {
         
         protected static volatile int nCreated = 0;
@@ -19,38 +20,25 @@ namespace OpenMined.Syft.Layer
         // indices for weights used in forward prediction (not inluding those in models array)
         protected List<int> parameters;
         
-        // indices for models used in forward prediction (which themselves can contain weights)
-        protected List<int> models;
+        // Model component type which includes layers and losses.
+        protected string model_type;
 
-        protected string layer_type;
+        protected int activation;
         
         protected SyftController controller;
-        
-        protected void init(string layer_type)
-        {
-            parameters = new List<int>();
-            models = new List<int>();
-            this.layer_type = layer_type;
-        }
-        
-        public virtual FloatTensor Forward(FloatTensor input)
-        {
-            // Model layer must implement forward
-            throw new NotImplementedException();
-        }
 
+        protected void init(string model_type)
+        {
+            activation = -1;
+            parameters = new List<int>();
+            this.model_type = model_type;
+        }
+        
         public string getLayerType()
         {
-            return layer_type;
+            return model_type;
         }
         
-        public int getModel(int i)
-        {
-            if(i > 0 && i < models.Count)
-                return models[i];
-            throw new ArgumentOutOfRangeException("Sub-model " + i + " does not exist.");
-        }
-
         public int getParameter(int i)
         {
             if(i > 0 && i < parameters.Count) 
@@ -62,65 +50,28 @@ namespace OpenMined.Syft.Layer
         {
             return parameters;
         }
-        
-        public List<int> getModels()
+
+        public string ProcessMessage (Command msgObj, SyftController ctrl)
         {
-            return models;
-        }
-        
-        public string ProcessMessage(Command msgObj, SyftController ctrl)
-        {
-            
+
             switch (msgObj.functionCall)
             {
-                case "forward":
+            case "forward": 
+                return ProcessForwardMessage (msgObj, ctrl);
+            case "params":
+                return ProcessParamsMessage (msgObj, ctrl);
+            case "activation":
                 {
-                    var input = ctrl.getTensor(int.Parse(msgObj.tensorIndexParams[0]));
-                    var result = this.Forward(input);
-                    return result.Id + "";
+                    return activation + "";   
                 }
-                case "params":
+            case "model_type":
                 {
-                    
-                    string out_str = "";
-
-                    for (int i = 0; i < models.Count; i++)
-                    {
-                        List<int> model_params = controller.getModel(models[i]).getParameters();
-                        for (int j = 0; j < model_params.Count; j++)
-                        {
-                            out_str += model_params[j].ToString() + ",";
-                        }
-                    }
-                    
-                    for (int i = 0; i < parameters.Count; i++)
-                    {
-                        
-                        out_str += parameters[i].ToString() + ",";
-                        
-                    }
-                    return out_str;
-                }
-                case "models":
-                {
-                    string out_str = "";
-
-                    for (int i = 0; i < models.Count; i++)
-                    {
-                        
-                        out_str += models[i].ToString() + ",";
-                        
-                    }
-                    return out_str;
-
-                }
-                case "layer_type":
-                {
-                    return layer_type;
+                    return model_type;
                 }
             }
 
             return ProcessMessageLocal(msgObj, ctrl);
+
         }
 
         public int[] GetParameters()
@@ -128,10 +79,25 @@ namespace OpenMined.Syft.Layer
             return parameters.ToArray();
         }
 
-        public virtual string ProcessMessageLocal(Command msgObj, SyftController ctrl)
-        {	
+        protected virtual string ProcessMessageLocal (Command msgObj, SyftController ctrl) 
+        {   
             return "Model.processMessage not Implemented:" + msgObj.functionCall;
         }
+
+        protected virtual string ProcessParamsMessage (Command msgObj, SyftController ctrl) 
+        {   
+            string out_str = "";
+
+            for (int i = 0; i < parameters.Count; i++)
+            {
+
+                out_str += parameters[i].ToString() + ",";
+
+            }
+            return out_str;
+        }
+
+        protected abstract string ProcessForwardMessage (Command msgObj, SyftController ctrl);
 
     }
 }
