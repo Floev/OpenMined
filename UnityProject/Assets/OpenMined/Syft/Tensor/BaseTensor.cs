@@ -165,11 +165,6 @@ namespace OpenMined.Syft.Tensor
         #endregion
         public void Zero_()
         {
-            if (!IsContiguous())
-            {
-                throw new InvalidOperationException("Tensor must be contiguous, call Contiguous() to convert");
-            }
-
             if (dataOnGpu)
             {
                 ZeroGPU_();
@@ -187,17 +182,55 @@ namespace OpenMined.Syft.Tensor
 
         public bool IsContiguous()
         {
-            foreach (var stride in strides)
+            long z = 1;
+            int d;
+            for(d = shape.Length-1; d >= 0; d--)
             {
-                if (stride == 0)
+                if(shape[d] != 1)
                 {
-                    return false;
+                    if (strides[d] == z) {
+                        z *= shape[d];
+                    } else {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        public int DimIndices2DataIndex(ref int[] dim_indices)
+        {
+            int index = 0;
+            for (int i = 0; i < dim_indices.Length; i++)
+            {
+                index += dim_indices[i] * strides[i];
+            }
+            return index;
+        }
+
+        public int[] DataIndex2DimIndices(int index, ref int[] dim_indices)
+        {
+            if (dim_indices == null)
+            {
+                dim_indices = new int[strides.Length];
+            }
+
+            for (int i = 0; i < strides.Length; i++)
+            {
+                if (strides[i] != 0)
+                {
+                    dim_indices[i] = index / strides[i];
+                    index %= strides[i];
+                }
+                else
+                {
+                    dim_indices[i] = 0;
                 }
             }
 
-            return strides[strides.Length - 1] == 1L;
+            return dim_indices;
         }
-
+        
         public abstract string ProcessMessage(Command msgObj, SyftController ctrl);
 
         public void setStridesAndCheckShape()

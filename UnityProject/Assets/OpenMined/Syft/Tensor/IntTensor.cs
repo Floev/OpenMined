@@ -11,8 +11,8 @@ namespace OpenMined.Syft.Tensor
     {
         private List<int> creators;
         private string creation_op;
-        private List<int> children_indices; // children -> counts
-        private List<int> children_counts; // children -> counts
+        public List<int> children_indices; // children -> counts
+        public List<int> children_counts; // children -> counts
         private int sibling;
 
         private IntTensorFactory factory;
@@ -124,7 +124,7 @@ namespace OpenMined.Syft.Tensor
             // Lastly: let's set the ID of the tensor.
             // IDEs might show a warning, but ref and volatile seems to be working with Interlocked API.
 
-#pragma warning disable 420
+            #pragma warning disable 420
             id = System.Threading.Interlocked.Increment(ref nCreated);
 
             if (SystemInfo.supportsComputeShaders && shader == null)
@@ -151,6 +151,36 @@ namespace OpenMined.Syft.Tensor
             throw new NotImplementedException();
         }
 
+        public IntTensor View(int[] new_shape, bool inline = true, FloatTensor result = null)
+        {
+            if (!IsContiguous()) {
+                throw new InvalidOperationException ("Tensor must be contiguous, call Contiguous() to convert");
+            }
+            if (inline == true)
+            {
+                
+                this.Shape = new_shape;
+
+                if (dataOnGpu)
+                {
+                    shapeBuffer.Release();
+                    shapeBuffer = new ComputeBuffer(shape.Length, sizeof(int));
+                    shapeBuffer.SetData(shape);
+                    
+                }
+                
+                setStridesAndCheckShape();
+
+                return this;
+
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+            
+        }
+        
         public override string ProcessMessage(Command msgObj, SyftController ctrl)
         {
             switch (msgObj.functionCall)
@@ -236,5 +266,6 @@ namespace OpenMined.Syft.Tensor
             }
             return "IntTensor.processMessage: Command not found:" + msgObj.functionCall;
         }
+
     }
 }

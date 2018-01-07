@@ -30,7 +30,7 @@
 
 ## Step 4: Add new function to Float Tensor (here “abs()” function i.e)
 
-- Open *[PySyft/syft/syft.py](https://github.com/OpenMined/PySyft/blob/master/syft/syft.py)*
+- Open *[PySyft/syft/tensor.py](https://github.com/OpenMined/PySyft/blob/master/syft/tensor.py)*
 ![Syft Abs](/images/HowToAddFunctionToFloatTensor/syft_abs.png)
 - Open *[Assets/OpenMined/Syft/Tensor/FloatTensor.cs](https://github.com/OpenMined/OpenMined/blob/master/UnityProject/Assets/OpenMined/Syft/Tensor/FloatTensor.cs)*
 - Add an `CASE` statement to check for the *“functionCall”* string you initialized in your JSON command object like so. 
