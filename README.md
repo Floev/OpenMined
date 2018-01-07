@@ -3,6 +3,7 @@ OpenMined Unity Application
 
 [![Build Status](https://travis-ci.org/OpenMined/OpenMined.svg?branch=master)](https://travis-ci.org/OpenMined/OpenMined)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Help Contribute to Open Source](https://www.codetriage.com/openmined/openmined/badges/users.svg)](https://www.codetriage.com/openmined/openmined)
 
 
 Table of Contents:   
@@ -67,7 +68,7 @@ The steps come in two parts:
 **Jupyter Setup**
 
 1. Run `jupyter notebook` from you openmined directory
-2. Open [Syft Tensor Example Notebook.ipynb](https://github.com/OpenMined/OpenMined/blob/master/notebooks/Syft%20Tensor%20Example%20Notebook.ipynb)
+2. Open [Syft Tensor Example Notebook.ipynb](https://github.com/OpenMined/OpenMined/blob/master/notebooks/demos/Syft%20Tensor%20Example%20Notebook.ipynb)
 3. Run the notebook
 
 ### For OSX (High Sierra)

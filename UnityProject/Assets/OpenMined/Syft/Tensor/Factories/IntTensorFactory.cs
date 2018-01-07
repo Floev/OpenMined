@@ -27,7 +27,7 @@ namespace OpenMined.Syft.Tensor.Factories
         
         public void Delete(int id)
         {
-            Debug.LogFormat("<color=purple>Removing Tensor {0}</color>", id);
+            //Debug.LogFormat("<color=purple>Removing Tensor {0}</color>", id);
 
             var tensor = tensors [id];
            
@@ -48,7 +48,7 @@ namespace OpenMined.Syft.Tensor.Factories
             bool _keepgrads = false,
             string _creation_op = null)
         {
-            
+               
             IntTensor tensor = new IntTensor();
             
             tensor.init(this,
@@ -64,7 +64,6 @@ namespace OpenMined.Syft.Tensor.Factories
                 _creation_op);
             
             tensors.Add(tensor.Id,tensor);
-
             
             return tensor;
         }

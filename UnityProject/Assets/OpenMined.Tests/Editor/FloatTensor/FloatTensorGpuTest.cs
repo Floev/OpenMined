@@ -533,7 +533,7 @@ namespace OpenMined.Tests
 
             var tensor = ctrl.floatTensorFactory.Create(_data: array, _shape: shape);
             tensor.Gpu(shader);
-            var copy = tensor.Copy();
+            var copy = tensor.Copy(tensor.Autograd);
             copy.Gpu(shader);
 
             Assert.AreEqual(copy.Shape, tensor.Shape);
@@ -623,7 +623,7 @@ namespace OpenMined.Tests
             var tensor1 = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
             tensor1.Gpu(shader);
 
-            var tensor2 = tensor1.Copy();
+            var tensor2 = tensor1.Copy(tensor1.Autograd);
 
             float[] data3 = {1, 1, (float) Double.NaN, 1, 1, 1, 1, 1};
             int[] shape3 = {2, 4};
@@ -648,7 +648,7 @@ namespace OpenMined.Tests
             var tensor2 = ctrl.floatTensorFactory.Create(_data: data2, _shape: shape2);
             tensor2.Gpu(shader);
 
-            tensor1.Div(tensor1.Copy(), inline: true);
+            tensor1.Div(tensor1.Copy(tensor1.Autograd), inline: true);
 
             AssertEqualTensorsData(tensor2, tensor1);
         }

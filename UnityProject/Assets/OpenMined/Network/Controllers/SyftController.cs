@@ -7,6 +7,7 @@ using OpenMined.Syft.Tensor;
 using OpenMined.Network.Utils;
 using OpenMined.Syft.Layer;
 using OpenMined.Syft.Layer.Loss;
+using OpenMined.Syft.Optim;
 using OpenMined.Syft.Tensor.Factories;
 using Random = UnityEngine.Random;
 
@@ -21,6 +22,7 @@ namespace OpenMined.Network.Controllers
 		public IntTensorFactory intTensorFactory;
 		
 		private Dictionary<int, Model> models;
+		private Dictionary<int, Optimizer> optimizers;
 		
 		public bool allow_new_tensors = true;
 
@@ -32,20 +34,32 @@ namespace OpenMined.Network.Controllers
 			intTensorFactory = new IntTensorFactory(_shader);
 			
 			models = new Dictionary<int, Model> ();
+			optimizers = new Dictionary<int, Optimizer>();
 		}
 
 		public ComputeShader Shader {
 			get { return shader; }
 		}
 
-		public float[] RandomWeights (int length)
+		public float[] RandomWeights (int length, int inputSize=0)
 		{
-			Random.InitState (1);
-			float[] syn0 = new float[length];
-			for (int i = 0; i < length; i++) {
-				syn0 [i] = 2 * Random.value - 1;
-			}
-			return syn0;
+           float _inputSize = (float)inputSize;
+           float Xavier = (float)Math.Sqrt(1.0F / _inputSize);
+           float[] syn0 = new float[length];
+           
+            for (int i = 0; i < length; i++)
+            {
+                // Use Xavier Initialization if inputSize is given
+                if (inputSize>0)
+                {
+                    syn0 [i] = Random.Range(-Xavier, Xavier);
+                }
+                else
+                {
+                    syn0 [i] = 2 * Random.value - 1;
+                }
+            }
+		    return syn0;
 		}
 
 		public Model getModel(int index)
@@ -53,6 +67,16 @@ namespace OpenMined.Network.Controllers
 			return models[index];
 		}
 
+		public Loss getLoss(int index)
+		{
+			return (Loss)models[index];
+		}
+
+		public Optimizer getOptimizer(int index)
+		{
+			return optimizers[index];
+		}
+		
 		public ComputeShader GetShader ()
 		{
 			return shader;
@@ -63,7 +87,18 @@ namespace OpenMined.Network.Controllers
 			models.Add (model.Id, model);
 			return (model.Id);
 		}
+		
+		public int addOptimizer (Optimizer optim)
+		{
+			optimizers.Add (optim.Id, optim);
+			return (optim.Id);
+		}
 
+		public void Log(string message)
+		{
+			Debug.LogFormat(message);
+		}
+		
 		public string processMessage (string json_message)
 		{
 			//Debug.LogFormat("<color=green>SyftController.processMessage {0}</color>", json_message);
@@ -74,6 +109,47 @@ namespace OpenMined.Network.Controllers
 
 				switch (msgObj.objectType)
 				{
+					case "Optimizer":
+					{
+						if (msgObj.functionCall == "create")
+						{
+							string optimizer_type = msgObj.tensorIndexParams[0];
+
+							// Extract parameters
+							List<int> p = new List<int>();
+							for (int i = 1; i < msgObj.tensorIndexParams.Length; i++)
+							{
+								p.Add(int.Parse(msgObj.tensorIndexParams[i]));
+							}
+							List<float> hp = new List<float>();
+							for (int i = 0; i < msgObj.hyperParams.Length; i++)
+							{
+								hp.Add(float.Parse(msgObj.hyperParams[i]));
+							}
+							
+							Optimizer optim = null;
+
+							if (optimizer_type == "sgd")
+							{
+								optim = new SGD(this, p, hp[0], hp[1], hp[2]);
+							}
+							else if (optimizer_type == "rmsprop")
+							{
+								optim = new RMSProp(this, p, hp[0], hp[1], hp[2], hp[3]);
+							}
+							else if (optimizer_type == "adam")
+							{
+								optim = new Adam(this, p, hp[0], hp[1], hp[2], hp[3], hp[4]);
+							}
+							
+							return optim.Id.ToString();
+						}
+						else
+						{
+							Optimizer optim = this.getOptimizer(msgObj.objectIndex);
+							return optim.ProcessMessage(msgObj, this);
+						}
+					}
 					case "FloatTensor":
 					{
 						if (msgObj.objectIndex == 0 && msgObj.functionCall == "create")
@@ -113,49 +189,72 @@ namespace OpenMined.Network.Controllers
 						{
 							string model_type = msgObj.tensorIndexParams[0];
 
+							Debug.LogFormat("<color=magenta>createModel:</color> {0}", model_type);
+							
 							if (model_type == "linear")
 							{
-								Debug.LogFormat("<color=magenta>createModel:</color> {0} : {1} {2}", model_type,
-									msgObj.tensorIndexParams[1], msgObj.tensorIndexParams[2]);
-								Linear model = new Linear(this, int.Parse(msgObj.tensorIndexParams[1]), int.Parse(msgObj.tensorIndexParams[2]));
-								return model.Id.ToString();
+								return new Linear(this, int.Parse(msgObj.tensorIndexParams[1]),
+								int.Parse(msgObj.tensorIndexParams[2]),
+								msgObj.tensorIndexParams[3]).Id.ToString();
+							}
+							else if (model_type == "relu")
+							{
+								return new ReLU(this).Id.ToString();
+							}
+							else if (model_type == "log")
+							{
+								return new Log(this).Id.ToString();
+							}
+							else if (model_type == "dropout")
+							{
+								return new Dropout(this,float.Parse(msgObj.tensorIndexParams[1])).Id.ToString();
 							}
 							else if (model_type == "sigmoid")
 							{
-								Debug.LogFormat("<color=magenta>createModel:</color> {0}", model_type);
-								Sigmoid model = new Sigmoid(this);
-								return model.Id.ToString();
+								return new Sigmoid(this).Id.ToString();
 							}
 							else if (model_type == "sequential")
 							{
-								Debug.LogFormat("<color=magenta>createModel:</color> {0}", model_type);
-								Sequential model = new Sequential(this);
-								return model.Id.ToString();
+								return new Sequential(this).Id.ToString();
+							}
+							else if (model_type == "softmax")
+							{
+								return new Softmax(this,int.Parse(msgObj.tensorIndexParams[1])).Id.ToString();
+							}
+							else if (model_type == "logsoftmax")
+							{
+								return new LogSoftmax(this,int.Parse(msgObj.tensorIndexParams[1])).Id.ToString();
 							}
 							else if (model_type == "policy")
 							{
-								Debug.LogFormat("<color=magenta>createModel:</color> {0}", model_type);
-								Policy model = new Policy(this,(Layer)getModel(int.Parse(msgObj.tensorIndexParams[1])));
-								return model.Id.ToString();
+								return new Policy(this,(Layer)getModel(int.Parse(msgObj.tensorIndexParams[1]))).Id.ToString();
 							}
                             else if (model_type == "tanh")
                             {
-                                Debug.LogFormat("<color=magenta>createModel:</color> {0}", model_type);
-                                Tanh model = new Tanh(this);
-                                return model.Id.ToString();
+                                return new Tanh(this).Id.ToString();
                             }
                             else if (model_type == "crossentropyloss")
                             {
-                                Debug.LogFormat("<color=magenta>createModel:</color> {0}", model_type);
-                                CrossEntropyLoss model = new CrossEntropyLoss(this);
-                                return model.Id.ToString();
+                                return new CrossEntropyLoss(this, int.Parse(msgObj.tensorIndexParams[1])).Id.ToString();
                             }
+							else if (model_type == "nllloss")
+							{
+								return new NLLLoss(this).Id.ToString();
+							}
                             else if (model_type == "mseloss")
+							{
+								return new MSELoss(this).Id.ToString();
+							}
+                            else if (model_type == "embedding")
                             {
-                                Debug.LogFormat("<color=magenta>createModel:</color> {0}", model_type);
-                                MSELoss model = new MSELoss(this);
-                                return model.Id.ToString();
+                                return new Embedding(this, int.Parse(msgObj.tensorIndexParams[1]), int.Parse(msgObj.tensorIndexParams[2])).Id.ToString();
                             }
+							else
+							{
+								Debug.LogFormat("<color=red>Model Type Not Found:</color> {0}", model_type);
+							}
+							
+							
 
 						}
 						else
@@ -191,6 +290,65 @@ namespace OpenMined.Network.Controllers
 								}
 							
 							return allow_new_tensors + "";
+						}else if (msgObj.functionCall == "load_floattensor")
+						{
+							FloatTensor tensor = floatTensorFactory.Create(filepath: msgObj.tensorIndexParams[0], _shader:this.Shader);
+							return tensor.Id.ToString();
+						}
+						else if (msgObj.functionCall == "set_seed")
+						{
+							 Random.InitState (int.Parse(msgObj.tensorIndexParams[0]));
+                             return "Random seed set!";
+						}
+						else if (msgObj.functionCall == "concatenate")
+						{
+							List<int> tensor_ids = new List<int>();
+							for (int i = 1; i < msgObj.tensorIndexParams.Length; i++)
+							{
+								tensor_ids.Add(int.Parse(msgObj.tensorIndexParams[i]));
+							}
+							FloatTensor result = Functional.Concatenate(floatTensorFactory, tensor_ids, int.Parse(msgObj.tensorIndexParams[0]));
+							return result.Id.ToString();
+						}
+						else if (msgObj.functionCall == "ones")
+						{
+						    int[] dims = new int[msgObj.tensorIndexParams.Length];
+							for (int i = 0; i < msgObj.tensorIndexParams.Length; i++)
+							{
+								dims[i] = int.Parse(msgObj.tensorIndexParams[i]);
+							}
+							FloatTensor result = Functional.Ones(floatTensorFactory, dims);
+							return result.Id.ToString();
+						}
+						else if (msgObj.functionCall == "randn")
+						{
+						    int[] dims = new int[msgObj.tensorIndexParams.Length];
+							for (int i = 0; i < msgObj.tensorIndexParams.Length; i++)
+							{
+								dims[i] = int.Parse(msgObj.tensorIndexParams[i]);
+							}
+							FloatTensor result = Functional.Randn(floatTensorFactory, dims);
+							return result.Id.ToString();
+						}
+						else if (msgObj.functionCall == "random")
+						{
+						    int[] dims = new int[msgObj.tensorIndexParams.Length];
+							for (int i = 0; i < msgObj.tensorIndexParams.Length; i++)
+							{
+								dims[i] = int.Parse(msgObj.tensorIndexParams[i]);
+							}
+							FloatTensor result = Functional.Random(floatTensorFactory, dims);
+							return result.Id.ToString();
+						}
+						else if (msgObj.functionCall == "zeros")
+						{
+						    int[] dims = new int[msgObj.tensorIndexParams.Length];
+							for (int i = 0; i < msgObj.tensorIndexParams.Length; i++)
+							{
+								dims[i] = int.Parse(msgObj.tensorIndexParams[i]);
+							}
+							FloatTensor result = Functional.Zeros(floatTensorFactory, dims);
+							return result.Id.ToString();
 						}
 						return "Unity Error: SyftController.processMessage: Command not found:" + msgObj.objectType + ":" + msgObj.functionCall;
 					}

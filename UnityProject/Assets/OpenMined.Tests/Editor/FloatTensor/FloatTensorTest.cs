@@ -1,7 +1,6 @@
 using System;
 using NUnit.Framework;
 using OpenMined.Network.Controllers;
-using OpenMined.Syft.NN;
 
 namespace OpenMined.Tests.Editor.FloatTensor
 {
@@ -474,13 +473,46 @@ namespace OpenMined.Tests.Editor.FloatTensor
         }
 
         [Test]
+        public void Clamp()
+        {
+            float[] data1 = {0, 1, 2, 3, 4, 5,6};
+            int[] shape1 = {1, 7};
+            var tensor1 = ctrl.floatTensorFactory.Create(_data: data1, _shape: shape1);
+
+            float[] data2 = {2, 2, 2, 3, 4, 5, 5};
+            int[] shape2 = {1, 7};
+            var tensor2 = ctrl.floatTensorFactory.Create(_data: data2, _shape: shape2);
+
+            float[] data3 = {2, 2, 2, 3, 4, 5, 6};
+            int[] shape3 = {1, 7};
+            var tensor3 = ctrl.floatTensorFactory.Create(_data: data3, _shape: shape3);
+
+            float min = 2;
+            float max = 5;
+
+            var tensorClampMinMax = tensor1.Clamp(min, max);
+
+            for (int i = 0; i < tensorClampMinMax.Size; i++)
+            {
+                Assert.AreEqual(tensor2[i], tensorClampMinMax[i]);
+            }
+
+            var tensorClampMin = tensor1.Clamp(min);
+
+            for (int i = 0; i < tensorClampMin.Size; i++)
+            {
+                Assert.AreEqual(tensor3[i], tensorClampMin[i]);
+            }
+        }
+
+        [Test]
         public void Copy()
         {
             float[] array = {1, 2, 3, 4, 5};
             int[] shape = {5};
 
             var tensor = ctrl.floatTensorFactory.Create(_data: array, _shape: shape);
-            var copy = tensor.Copy();
+            var copy = tensor.Copy(tensor.Autograd);
 
             Assert.AreEqual(copy.Shape, tensor.Shape);
             Assert.AreEqual(copy.Data, tensor.Data);
@@ -1860,7 +1892,7 @@ namespace OpenMined.Tests.Editor.FloatTensor
 
             var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
 
-            var actualTensor = Functional.Softmax(tensor);
+            var actualTensor = tensor.Softmax();
 
             var expectedTensor = new float[]
                 {(float) 0.0320586, (float) 0.08714432, (float) 0.23688282, (float) 0.64391426};
@@ -1880,16 +1912,10 @@ namespace OpenMined.Tests.Editor.FloatTensor
             var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape, _autograd:true);
             var gradTensor = ctrl.floatTensorFactory.Create(_data: gradData, _shape: shape);
 
-            var outputTensor = Functional.Softmax(tensor);
-            
-            var gradInput = Functional.SoftmaxGradient(outputTensor, gradTensor, 0);
+            var outputTensor = tensor.Softmax();
 
             var expectedTensor = new float[]
                 {(float) 0.2280, (float) -0.0916, (float) -0.0750, (float) -0.0614};
-            for (var i = 0; i < expectedTensor.Length; i++)
-            {
-                Assert.AreEqual(expectedTensor[i], gradInput[i], 1e-3);
-            }
             
             outputTensor.Backward(gradTensor, null);
             for (var i = 0; i < expectedTensor.Length; i++)
@@ -1906,7 +1932,7 @@ namespace OpenMined.Tests.Editor.FloatTensor
 
             var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
 
-            var actualTensor = Functional.Softmax(tensor);
+            var actualTensor = tensor.Softmax();
 
             var expectedData = new float[] {(float) 0.2689, (float) 0.7311, (float) 0.2689, (float) 0.7311};
             var expectedTensor = ctrl.floatTensorFactory.Create(_data: expectedData, _shape: shape);
@@ -1915,7 +1941,7 @@ namespace OpenMined.Tests.Editor.FloatTensor
                 Assert.AreEqual(expectedTensor[i], actualTensor[i], 1e-3);
             }
 
-            actualTensor = Functional.Softmax(tensor, 0);
+            actualTensor = tensor.Softmax(0);
 
             expectedData = new float[] {(float) 0.1192, (float) 0.1192, (float) 0.8808, (float) 0.8808};
             expectedTensor = ctrl.floatTensorFactory.Create(_data: expectedData, _shape: shape);
@@ -1938,7 +1964,7 @@ namespace OpenMined.Tests.Editor.FloatTensor
             };
 
             var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
-            var actualTensor = Functional.Softmax(tensor);
+            var actualTensor = tensor.Softmax();
 
             var expectedTensor = ctrl.floatTensorFactory.Create(_data: expectedData, _shape: shape);
             for (var i = 0; i < expectedTensor.Size; i++)
@@ -1946,7 +1972,7 @@ namespace OpenMined.Tests.Editor.FloatTensor
                 Assert.AreEqual(expectedTensor[i], actualTensor[i], 1e-3);
             }
 
-            actualTensor = Functional.Softmax(tensor, 1);
+            actualTensor = tensor.Softmax(1);
             expectedData = new float[]
             {
                 (float) 0.1192, (float) 0.1192, (float) 0.8808, (float) 0.8808, (float) 0.1192, (float) 0.1192,
@@ -1958,7 +1984,7 @@ namespace OpenMined.Tests.Editor.FloatTensor
                 Assert.AreEqual(expectedTensor[i], actualTensor[i], 1e-3);
             }
             
-            actualTensor = Functional.Softmax(tensor, 0);
+            actualTensor = tensor.Softmax(0);
             expectedData = new float[]
             {
                 (float) 0.0180, (float) 0.0180, (float) 0.0180, (float) 0.0180, (float) 0.9820, (float) 0.9820,
@@ -2586,6 +2612,20 @@ namespace OpenMined.Tests.Editor.FloatTensor
         }
 
         [Test]
+        public void Unsqueeze()
+        {
+            float[] data1 = {1, 2, 3, 4};
+            int[] shape1 = {2, 2};
+
+            var tensor = ctrl.floatTensorFactory.Create(_data: data1, _shape: shape1);
+
+            var newTensor = tensor.Unsqueeze(1);
+
+            Assert.AreEqual(1, newTensor.Shape[1]);
+            Assert.AreEqual(3, newTensor.Shape.Length);
+        }
+
+        [Test]
         public void View()
         {
             float[] data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
@@ -2614,7 +2654,7 @@ namespace OpenMined.Tests.Editor.FloatTensor
 
             int[] newShape = {2, 8};
 
-            tensor.View(newShape, inline: true);
+            tensor.View(new_shape:newShape, inline: true);
 
             Assert.AreEqual(2, tensor.Shape[0]);
             Assert.AreEqual(8, tensor.Shape[1]);

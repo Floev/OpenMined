@@ -1,8 +1,7 @@
 ﻿using System;
 using NUnit.Framework;
 using OpenMined.Network.Controllers;
-using OpenMined.Syft.NN;
-using UnityEngine;
+using System.Linq;
 
 namespace OpenMined.Tests.Editor.FloatTensor
 {
@@ -39,6 +38,62 @@ namespace OpenMined.Tests.Editor.FloatTensor
         /********************/
         /* Tests Start Here */
         /********************/
+
+        [Test]
+        public void Abs()
+        {
+            var a = ctrl.floatTensorFactory.Create(_data: new float[] { 1, 2, 3, 4, 5, -1, -2, -3, -4, -5 }, 
+                                                   _shape: new int[] { 5, 2 }, _autograd: true);
+            float[] c_expected = { 1f, 2f, 3f, 4f, 5f, 1f, 2f, 3f, 4f, 5f };
+            var c_grad = ctrl.floatTensorFactory.Create(_data: new float[]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, _shape: new int[]{ 5, 2 });
+
+            float[] a_expected_grad = { 1f, 1f, 1f, 1f, 1f, -1f, -1f, -1f, -1f, -1f };
+
+            var c = a.Abs();
+            c.Backward(c_grad);
+
+            for (int i = 0; i < a.Size; i++)
+            {
+                // sum is correct
+                Assert.AreEqual(c_expected[i],c[i]);
+                
+                // gradients are correct
+                Assert.AreEqual(a_expected_grad[i], a.Grad[i]);
+            }
+            
+            // check that repeating doesn't break it
+            c = a.Abs();
+            c.Backward(c_grad);
+
+            for (int i = 0; i < a.Size; i++)
+            {
+                // sum is correct
+                Assert.AreEqual(c_expected[i],c[i]);
+                
+                // gradients are correct
+                Assert.AreEqual(a_expected_grad[i], a.Grad[i]);
+            }
+
+            // see if it's allocating new tensors during the forward pass
+            ctrl.allow_new_tensors = false;
+            
+            // check that repeating the forward pass doesn't break it
+            c = a.Abs();
+            c = a.Abs();
+            c.Backward(c_grad);
+
+            for (int i = 0; i < a.Size; i++)
+            {
+                // sum is correct
+                Assert.AreEqual(c_expected[i],c[i]);
+                
+                // gradients are correct
+                Assert.AreEqual(a_expected_grad[i], a.Grad[i]);
+            }
+            
+            // cleanup
+            ctrl.allow_new_tensors = true;
+        }
 
         [Test]
         public void AddElemAutograd()
@@ -786,6 +841,42 @@ namespace OpenMined.Tests.Editor.FloatTensor
         }
 
         [Test]
+        public void ReLUAutograd()
+        {
+
+            int[] ash = new int[] {2, 5};
+            float[] a_data = new float[] {-1, -2, -3, -4, -5, 2, 3, 4, 5, 6};
+            var a = ctrl.floatTensorFactory.Create(_data: a_data, _shape: ash);
+
+            a.Autograd = true;
+
+            int[] ces = ash;
+            float[] c_data = new float[] {0f , 0f ,  0f ,  0f ,  0f , 2f,  3f,  4f,  5f,  6f};
+
+            var c_expected = ctrl.floatTensorFactory.Create(_data: c_data,_shape: ces);
+            var c_grad = ctrl.floatTensorFactory.Create(_data: new float[]{1,1,1,1,1,1,1,1,1,1}, _shape: ces);
+
+            float[] a_grad_data = new float[] {0f,  0f,  0f,  0f,  0f, 1f,  1f,  1f,  1f,  1f};
+            var a_grad = ctrl.floatTensorFactory.Create(_data: a_grad_data, _shape: ash);
+
+            var c = a.ReLU();
+            c.Backward(c_grad);
+
+            for (int i = 0; i < c.Size; i++)
+            {
+                // multiplication is correct
+                Assert.True(Math.Abs(c_expected.Data[i] - c.Data[i]) < 0.000001);
+            }
+
+            for (int i = 0; i < a_grad.Size; i++)
+            {
+                // a gradients are correct
+                Assert.True(Math.Abs(a_grad.Data[i] - a.Grad.Data[i]) < 0.0001);    
+            }
+              
+        }
+
+        [Test]
         public void SigmoidAutograd()
         {
 
@@ -974,6 +1065,435 @@ namespace OpenMined.Tests.Editor.FloatTensor
             Assert.True(Math.Abs(weights1.Grad.Data[10] - (-0.01417091)) < 0.00001);
             Assert.True(Math.Abs(weights1.Grad.Data[11] - (0.02481702)) < 0.00001);
             
+            ctrl.allow_new_tensors = true;
+
+        }
+        
+        [Test]
+        public void TanhAutograd()
+        {
+            float[] data1 = { 1, 2, 3, 4 };
+            int[] shape1 = { 2, 2 };
+            var tensor = ctrl.floatTensorFactory.Create(_data: data1, _shape: shape1, _autograd: true);
+
+            float[] data2 = { 0.4200f, 0.0707f, 0.0099f, 0.0013f };
+            int[] shape2 = { 2, 2 };
+
+            var expectedGradTensor = ctrl.floatTensorFactory.Create( _data: data2, _shape: shape2);
+
+            float[] data3 = { 0.7616f, 0.9640f, 0.9951f, 0.9993f };
+            int[] shape3 = { 2, 2 };
+
+            var tanhGrad = ctrl.floatTensorFactory.Create(_data: new float[] { 1, 1, 1, 1 }, _shape: new int[] { 2, 2 });
+
+            var expectedTanhTensor = ctrl.floatTensorFactory.Create(_data: data3, _shape: shape3);
+
+            var tanhTensor = tensor.Tanh();
+            tanhTensor.Backward(tanhGrad);
+
+            for (var i = 0; i < tensor.Size; i++)
+            {
+                Assert.AreEqual(expectedTanhTensor.Data[i], tanhTensor.Data[i], 1e-4);
+            }
+
+            for (var i = 0; i < tensor.Size; i++)
+            {
+                Assert.AreEqual(expectedGradTensor.Data[i], tensor.Grad.Data[i], 1e-4);
+            }
+
+            tanhTensor = tensor.Tanh();
+            tanhTensor.Backward(tanhGrad);
+            
+            for (var i = 0; i < tensor.Size; i++)
+            {
+                Assert.AreEqual(expectedTanhTensor.Data[i], tanhTensor.Data[i], 1e-4);
+            }
+
+            for (var i = 0; i < tensor.Size; i++)
+            {
+                Assert.AreEqual(expectedGradTensor.Data[i], tensor.Grad.Data[i], 1e-4);
+            }
+
+            ctrl.allow_new_tensors = false;
+            tanhTensor = tensor.Tanh();
+            tanhTensor = tensor.Tanh();
+            tanhTensor.Backward(tanhGrad);
+            
+            for (var i = 0; i < tensor.Size; i++)
+            {
+                Assert.AreEqual(expectedTanhTensor.Data[i], tanhTensor.Data[i], 1e-4);
+            }
+
+            for (var i = 0; i < tensor.Size; i++)
+            {
+                Assert.AreEqual(expectedGradTensor.Data[i], tensor.Grad.Data[i], 1e-4);
+            }
+
+            ctrl.allow_new_tensors = true;
+        }
+
+        [Test]
+        public void SumAutograd()
+        {
+            float[] data = { 1,  2,  3,  4,  5,  6,  7,  8,  9,
+                              10, 11, 12, 13, 14, 15, 16, 17, 18,
+                              19, 20, 21, 22, 23, 24, 25, 26, 27 };
+            int[] shape = { 3, 3, 3 };
+
+            var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape, _autograd: true);
+
+            float[] gradData = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            int[] gradShape = { 3, 3 };
+
+            var gradTensor = ctrl.floatTensorFactory.Create(_data: gradData, _shape: gradShape);
+
+            var sum = tensor.Sum(1);
+            sum.Backward(gradTensor);
+
+            var grad = tensor.Grad;
+
+            float[] expectedData = { 12, 15, 18, 39, 42, 45, 66, 69, 72 };
+            float[] expectedGradData = { 1, 2, 3, 1, 2, 3, 1, 2, 3,
+                                         4, 5, 6, 4, 5, 6, 4, 5, 6,
+                                         7, 8, 9, 7, 8, 9, 7, 8, 9 };
+
+            Assert.IsTrue(expectedData.SequenceEqual(sum.Data));
+            Assert.IsTrue(expectedGradData.SequenceEqual(grad.Data));
+
+            // check that repeating doesn't break it
+            sum = tensor.Sum(1);
+            sum.Backward(gradTensor);
+
+            Assert.IsTrue(expectedData.SequenceEqual(sum.Data));
+            Assert.IsTrue(expectedGradData.SequenceEqual(grad.Data));
+
+            // see if it's allocating new tensors during the forward pass
+            ctrl.allow_new_tensors = false;
+
+            // check that repeating the forward pass doesn't break it
+            sum = tensor.Sum(1);
+            sum = tensor.Sum(1);
+            sum.Backward(gradTensor);
+
+            Assert.IsTrue(expectedData.SequenceEqual(sum.Data));
+            Assert.IsTrue(expectedGradData.SequenceEqual(grad.Data));
+
+            ctrl.allow_new_tensors = true;
+        }
+
+        public void ViewAutograd()
+        {
+
+            int[] ash = new int[] {2, 5};
+            float[] a_data = new float[] {1, 2, 3, 4, 5, 2, 3, 4, 5, 6};
+            var a = ctrl.floatTensorFactory.Create(_data: a_data, _shape: ash);
+
+            a.Autograd = true;
+
+            var c_grad = ctrl.floatTensorFactory.Create(_data: new float[]{1,2,3,4,5,6,7,8,9,10}, _shape: new int[] {5, 2});
+            var a_grad = ctrl.floatTensorFactory.Create(_data: new float[]{1,2,3,4,5,6,7,8,9,10}, _shape: new int[] {2, 5});
+
+            var c = a.View(new int[] {5, 2});
+            c.Backward(c_grad);
+
+            for (int i = 0; i < c.Size; i++)
+            {
+                // grad is correct
+                Assert.True(Math.Abs(a_grad.Data[i] - a.Grad.Data[i]) < 0.000001);
+            }
+            
+            Assert.True(a.Grad.Shape[0] == a.Shape[0]);
+            Assert.True(a.Grad.Shape[1] == a.Shape[1]);
+            
+            Assert.True(a.Grad.Strides[0] == a.Strides[0]);
+            Assert.True(a.Grad.Strides[1] == a.Strides[1]);
+
+            // check that repeating doesn't break it
+            c = a.View(new int[] {5, 2});
+            c.Backward(c_grad);
+
+            for (int i = 0; i < c.Size; i++)
+            {
+                // grad is correct
+                Assert.AreEqual(a_grad.Data[i],a.Grad.Data[i]);
+            }
+            
+            Assert.True(a.Grad.Shape[0] == a.Shape[0]);
+            Assert.True(a.Grad.Shape[1] == a.Shape[1]);
+            
+            Assert.True(a.Grad.Strides[0] == a.Strides[0]);
+            Assert.True(a.Grad.Strides[1] == a.Strides[1]);
+
+            // see if it's allocating new tensors during the forward pass
+            ctrl.allow_new_tensors = false;
+            
+            // check that repeating the forward pass doesn't break it
+            c = a.View(new int[] {5, 2});
+            c = a.View(new int[] {5, 2});
+            c.Backward(c_grad);
+
+            for (int i = 0; i < c.Size; i++)
+            {
+                // grad is correct
+                Assert.True(Math.Abs(a_grad.Data[i] - a.Grad[i]) < 0.000001);
+            }
+            
+            Assert.True(a.Grad.Shape[0] == a.Shape[0]);
+            Assert.True(a.Grad.Shape[1] == a.Shape[1]);
+            
+            Assert.True(a.Grad.Strides[0] == a.Strides[0]);
+            Assert.True(a.Grad.Strides[1] == a.Strides[1]);
+            ctrl.allow_new_tensors = true;
+              
+        }
+        
+        [Test]
+        public void ExpandAutograd()
+        {
+
+            int[] ash = new int[] {1,4,1};
+            float[] a_data = new float[] {1, 1, 1, 1};
+            var a = ctrl.floatTensorFactory.Create(_data: a_data, _shape: ash);
+
+            a.Autograd = true;
+
+            var c_grad = ctrl.floatTensorFactory.Create(_data: new float[]{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+                _shape: new int[] {2, 4, 2});
+            var a_grad = ctrl.floatTensorFactory.Create(_data: new float[]{4,4,4,4}, _shape: new int[] {1, 4, 1});
+
+            var c = a.Expand(new int[] {2,4,2}).Contiguous();
+            c.Backward(c_grad);
+
+            for (int i = 0; i < a.Size; i++)
+            {
+                // grad is correct
+                Assert.True(Math.Abs(a_grad.Data[i] - a.Grad.Data[i]) < 0.000001);
+            }
+            
+            Assert.True(a.Grad.Shape[0] == a.Shape[0]);
+            Assert.True(a.Grad.Shape[1] == a.Shape[1]);
+            
+            Assert.True(a.Grad.Strides[0] == a.Strides[0]);
+            Assert.True(a.Grad.Strides[1] == a.Strides[1]);
+
+            // check that repeating doesn't break it
+            c = a.Expand(new int[] {2,4,2}).Contiguous();
+            c.Backward(c_grad);
+
+            for (int i = 0; i < a.Size; i++)
+            {
+                // grad is correct
+                Assert.True(Math.Abs(a_grad.Data[i] - a.Grad.Data[i]) < 0.000001);
+            }
+            
+            Assert.True(a.Grad.Shape[0] == a.Shape[0]);
+            Assert.True(a.Grad.Shape[1] == a.Shape[1]);
+            
+            Assert.True(a.Grad.Strides[0] == a.Strides[0]);
+            Assert.True(a.Grad.Strides[1] == a.Strides[1]);
+
+            // see if it's allocating new tensors during the forward pass
+            ctrl.allow_new_tensors = false;
+            
+            // check that repeating the forward pass doesn't break it
+            c = a.Expand(new int[] {2,4,2}).Contiguous();
+            c = a.Expand(new int[] {2,4,2}).Contiguous();
+            c.Backward(c_grad);
+
+            for (int i = 0; i < a.Size; i++)
+            {
+                // grad is correct
+                Assert.True(Math.Abs(a_grad.Data[i] - a.Grad.Data[i]) < 0.000001);
+            }
+
+            Assert.True(a.Grad.Shape[0] == a.Shape[0]);
+            Assert.True(a.Grad.Shape[1] == a.Shape[1]);
+
+            Assert.True(a.Grad.Strides[0] == a.Strides[0]);
+            Assert.True(a.Grad.Strides[1] == a.Strides[1]);
+
+            ctrl.allow_new_tensors = true;
+
+        }
+
+        [Test]
+        public void UnsqueezeAutograd()
+        {
+            int[] ash = new int[] { 2, 2 };
+            float[] a_data = new float[] { 1, 1, 1, 1 };
+            var a = ctrl.floatTensorFactory.Create(_data: a_data, _shape: ash, _autograd: true);
+            int[] a_expected_grad_shape = { 2, 2 };
+            int[] c_expected_shape = { 2, 1, 2 };
+
+            var c_grad = ctrl.floatTensorFactory.Create(_data: new float[] { 1, 1, 1, 1 },
+                                                        _shape: new int[] { 2, 1, 2 });
+
+            var c = a.Unsqueeze(1);
+            c.Backward(c_grad);
+
+            for (var i = 0; i < c.Shape.Length; i++)
+            {
+                Assert.AreEqual(c_expected_shape[i], c.Shape[i]);
+            }
+
+            for (var i = 0; i < a.Grad.Shape.Length; i++)
+            {
+                Assert.AreEqual(a_expected_grad_shape[i], a.Grad.Shape[i]);
+            }
+
+            // check that repeating doesn't break it
+            c = a.Unsqueeze(1);     
+            c.Backward(c_grad);
+
+            for (var i = 0; i < c.Shape.Length; i++)
+            {
+                Assert.AreEqual(c_expected_shape[i], c.Shape[i]);
+            }
+
+            for (var i = 0; i < a.Grad.Shape.Length; i++)
+            {
+                Assert.AreEqual(a_expected_grad_shape[i], a.Grad.Shape[i]);
+            }
+            
+            // see if it's allocating new tensors during the forward pass
+            ctrl.allow_new_tensors = false;
+
+            // check that repeating the forward pass doesn't break it
+            c = a.Unsqueeze(1);
+            c = a.Unsqueeze(1);
+            c.Backward(c_grad);
+            
+            for (var i = 0; i < c.Shape.Length; i++)
+            {
+                Assert.AreEqual(c_expected_shape[i], c.Shape[i]);
+            }
+
+            for (var i = 0; i < a.Grad.Shape.Length; i++)
+            {
+                Assert.AreEqual(a_expected_grad_shape[i], a.Grad.Shape[i]);
+            }
+
+            ctrl.allow_new_tensors = true;
+        }
+
+        [Test]
+        public void SqueezeAutograd()
+        {
+            int[] ash = new int[] { 2, 1, 2 };
+            float[] a_data = new float[] { 1, 1, 1, 1 };
+            var a = ctrl.floatTensorFactory.Create(_data: a_data, _shape: ash, _autograd: true);
+            int[] a_expected_grad_shape = { 2, 1, 2 };
+            int[] c_expected_shape = { 2, 2 };
+
+            var c_grad = ctrl.floatTensorFactory.Create(_data: new float[] { 1, 1, 1, 1 },
+                                                        _shape: new int[] { 2, 2 });
+
+            var c = a.Squeeze(1);
+            c.Backward(c_grad);
+
+            for (var i = 0; i < c.Shape.Length; i++)
+            {
+                Assert.AreEqual(c_expected_shape[i], c.Shape[i]);
+            }
+
+            for (var i = 0; i < a.Grad.Shape.Length; i++)
+            {
+                Assert.AreEqual(a_expected_grad_shape[i], a.Grad.Shape[i]);
+            }
+
+            // check that repeating doesn't break it
+            c = a.Squeeze(1);
+            c.Backward(c_grad);
+
+            for (var i = 0; i < c.Shape.Length; i++)
+            {
+                Assert.AreEqual(c_expected_shape[i], c.Shape[i]);
+            }
+
+            for (var i = 0; i < a.Grad.Shape.Length; i++)
+            {
+                Assert.AreEqual(a_expected_grad_shape[i], a.Grad.Shape[i]);
+            }
+            
+            // see if it's allocating new tensors during the forward pass
+            ctrl.allow_new_tensors = false;
+
+            // check that repeating the forward pass doesn't break it
+            c = a.Squeeze(1);
+            c = a.Squeeze(1);
+            c.Backward(c_grad);
+            
+            for (var i = 0; i < c.Shape.Length; i++)
+            {
+                Assert.AreEqual(c_expected_shape[i], c.Shape[i]);
+            }
+
+            for (var i = 0; i < a.Grad.Shape.Length; i++)
+            {
+                Assert.AreEqual(a_expected_grad_shape[i], a.Grad.Shape[i]);
+            }
+
+            ctrl.allow_new_tensors = true;
+
+        }
+        
+        [Test]
+        public void SqueezeNoDimensionsChangedAutograd()
+        {
+            int[] ash = new int[] { 2, 2 };
+            float[] a_data = new float[] { 1, 1, 1, 1 };
+            var a = ctrl.floatTensorFactory.Create(_data: a_data, _shape: ash, _autograd: true);
+            int[] a_expected_grad_shape = { 2, 2 };
+            int[] c_expected_shape = { 2, 2 };
+
+            var c_grad = ctrl.floatTensorFactory.Create(_data: new float[] { 1, 1, 1, 1 },
+                                                        _shape: new int[] { 2, 2 });
+
+            var c = a.Squeeze();
+            c.Backward(c_grad);
+
+            for (var i = 0; i < c.Shape.Length; i++)
+            {
+                Assert.AreEqual(c_expected_shape[i], c.Shape[i]);
+            }
+
+            for (var i = 0; i < a.Grad.Shape.Length; i++)
+            {
+                Assert.AreEqual(a_expected_grad_shape[i], a.Grad.Shape[i]);
+            }
+
+            // check that repeating doesn't break it
+            c = a.Squeeze();
+            c.Backward(c_grad);
+
+            for (var i = 0; i < c.Shape.Length; i++)
+            {
+                Assert.AreEqual(c_expected_shape[i], c.Shape[i]);
+            }
+
+            for (var i = 0; i < a.Grad.Shape.Length; i++)
+            {
+                Assert.AreEqual(a_expected_grad_shape[i], a.Grad.Shape[i]);
+            }
+            
+            // see if it's allocating new tensors during the forward pass
+            ctrl.allow_new_tensors = false;
+
+            // check that repeating the forward pass doesn't break it
+            c = a.Squeeze();
+            c = a.Squeeze();
+            c.Backward(c_grad);
+            
+            for (var i = 0; i < c.Shape.Length; i++)
+            {
+                Assert.AreEqual(c_expected_shape[i], c.Shape[i]);
+            }
+
+            for (var i = 0; i < a.Grad.Shape.Length; i++)
+            {
+                Assert.AreEqual(a_expected_grad_shape[i], a.Grad.Shape[i]);
+            }
+
             ctrl.allow_new_tensors = true;
 
         }

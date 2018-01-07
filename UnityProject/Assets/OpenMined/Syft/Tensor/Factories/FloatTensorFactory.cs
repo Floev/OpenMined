@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using OpenMined.Network.Controllers;
 using UnityEngine;
 
@@ -30,7 +31,7 @@ namespace OpenMined.Syft.Tensor.Factories
         
         public void Delete(int id)
         {
-            Debug.LogFormat("<color=purple>Removing Tensor {0}</color>", id);
+            //Debug.LogFormat("<color=purple>Removing Tensor {0}</color>", id);
 
             var tensor = tensors [id];
             
@@ -41,7 +42,25 @@ namespace OpenMined.Syft.Tensor.Factories
             tensor.Dispose();
 
         }
-
+        
+        // create from file
+        public FloatTensor Create(string filepath,
+            ComputeShader _shader = null,
+            bool _dataOnGpu = false,
+            bool _autograd = false,
+            bool _keepgrads = false,
+            string _creation_op = null)
+        {
+            Tuple<int[],float[]> shape_data = FloatTensor.ReadFromFile(filepath);
+            return Create(_shape: shape_data.Item1,
+                _data: shape_data.Item2,
+                _copyData: false,
+                _dataOnGpu: false,
+                _autograd: _autograd,
+                _keepgrads: _keepgrads,
+                _creation_op: "read_from_file");
+        }
+        
         public FloatTensor Create(int[] _shape,
             float[] _data = null,
             ComputeBuffer _dataBuffer = null,
@@ -53,24 +72,33 @@ namespace OpenMined.Syft.Tensor.Factories
             bool _keepgrads = false,
             string _creation_op = null)
         {
-            
-            FloatTensor tensor = new FloatTensor();
-            
-            tensor.init(this,
-                _shape,
-                _data,
-                _dataBuffer,
-                _shapeBuffer,
-                _shader,
-                _copyData,
-                _dataOnGpu,
-                _autograd, 
-                _keepgrads,
-                _creation_op);
-            
-            tensors.Add(tensor.Id,tensor);
 
-            return tensor;
+            if (ctrl.allow_new_tensors)
+            {
+
+                FloatTensor tensor = new FloatTensor();
+
+                tensor.init(this,
+                    _shape,
+                    _data,
+                    _dataBuffer,
+                    _shapeBuffer,
+                    _shader,
+                    _copyData,
+                    _dataOnGpu,
+                    _autograd,
+                    _keepgrads,
+                    _creation_op);
+
+                tensors.Add(tensor.Id, tensor);
+
+                return tensor;
+            }
+            else
+            {
+                throw new Exception("Attempted to Create a new FloatTensor");
+            }
+
         }
        
         public ComputeShader GetShader()
