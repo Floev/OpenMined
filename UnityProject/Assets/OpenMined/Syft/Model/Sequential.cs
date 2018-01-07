@@ -1,14 +1,19 @@
-﻿using JetBrains.Annotations;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using JetBrains.Annotations;
 using OpenMined.Network.Controllers;
 using OpenMined.Network.Utils;
 using OpenMined.Syft.Tensor;
 using UnityEngine;
 
-namespace OpenMined.Syft.Model
+namespace OpenMined.Syft.Layer
 {
-    public class Sequential: Layer.Model
+    public class Sequential: Layer
     {
-		
+        // indices for layers used in forward prediction (which themselves can contain weights)
+        private List<int> layers = new List<int>();
+        		
         public Sequential (SyftController _controller)
         {
             init("sequential");
@@ -20,41 +25,88 @@ namespace OpenMined.Syft.Model
             controller.addModel(this);
         }
 
-        public void AddModel(Layer.Model model)
+        private int getLayer(int i)
         {
-            this.models.Add(model.Id);
+            if(i > 0 && i < layers.Count)
+                return layers[i];
+            throw new ArgumentOutOfRangeException("Sub-layer " + i + " does not exist.");
+        }
+
+        private List<int> getLayers()
+        {
+            return this.layers;
+        }
+
+        public void AddLayer(Layer layer)
+        {
+            this.layers.Add(layer.Id);
         }
 
         public override FloatTensor Forward(FloatTensor input)
         {
-            
-            for (int i = 0; i < this.models.Count; i++)
+            for (int i = 0; i < this.layers.Count; i++)
             {
-                if (i == 0)    
-                {
-                    input = controller.getModel(this.models[0]).Forward(input);
-                }
-                else
-                {
-                    input = controller.getModel((this.models[i])).Forward(input);
-                }
+                int layerIdx = this.layers [i];
+                Layer layer = (Layer)controller.getModel (layerIdx);
+
+                input = layer.Forward(input);
             }
+            activation = input.Id;
             return input;
         }
-        
-        public override string ProcessMessageLocal(Command msgObj, SyftController ctrl)
+
+        protected override string ProcessParamsMessage (Command msgObj, SyftController ctrl) 
+        {   
+            string out_str = "";
+
+            for (int i = 0; i < this.layers.Count; i++)
+            {
+                List<int> layer_params = controller.getModel(layers[i]).getParameters();
+                for (int j = 0; j < layer_params.Count; j++)
+                {
+                    out_str += layer_params[j].ToString() + ",";
+                }
+            }
+
+            List<int> seq_params = this.getParameters ();
+            for (int i = 0; i < seq_params.Count; i++)
+            {
+                out_str += seq_params[i].ToString() + ",";
+            }
+
+            return out_str;
+        }
+
+        protected override string ProcessMessageLocal(Command msgObj, SyftController ctrl)
         {
             switch (msgObj.functionCall)
             {
                 case "add":
                 {
-                    var input = ctrl.getModel(int.Parse(msgObj.tensorIndexParams[0]));
-                    Debug.LogFormat("<color=magenta>Model Added to Sequential:</color> {0}", input.Id);                    
-                    this.AddModel(input);
+                    // TODO: Handle adding layers better
+                    var input = (Layer)ctrl.getModel(int.Parse(msgObj.tensorIndexParams[0]));
+                    Debug.LogFormat("<color=magenta>Layer Added to Sequential:</color> {0}", input.Id);                    
+                    this.AddLayer(input);
                     return input.Id + "";
                 }
+                case "models":
+                {
+                    string out_str = "";
+
+                    for (int i = 0; i < this.layers.Count; i++)
+                    {
+
+                        out_str += this.layers[i].ToString() + ",";
+
+                    }
+                    return out_str;
+
+                }
+                default: 
+                {
+                    return "Model.processMessage not Implemented:" + msgObj.functionCall;
+                }
             }
-            return "Model.processMessage not Implemented:" + msgObj.functionCall;
         }
 
     }

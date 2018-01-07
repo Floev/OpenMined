@@ -5,7 +5,7 @@ using OpenMined.Syft.Tensor;
 
 namespace OpenMined.Syft.Layer
 {
-	public class Linear: Model
+	public class Linear: Layer
 	{
 //		private int _input;
 //		private int _output;
@@ -24,11 +24,11 @@ namespace OpenMined.Syft.Layer
 			
 			int[] weightShape = { input, output };
 			var weights = controller.RandomWeights(input * output);
-			_weights = new FloatTensor(controller, _shape: weightShape, _data: weights, _autograd: true, _keepgrads: true);
+			_weights = controller.floatTensorFactory.Create(_shape: weightShape, _data: weights, _autograd: true, _keepgrads: true);
 
 			// TODO: add bias when broadcast is available
 			int[] biasShape = {output};
-			_bias = new FloatTensor(controller, biasShape, _autograd: true);
+			_bias = controller.floatTensorFactory.Create(_shape:biasShape, _autograd: true);
 
 			parameters.Add(_weights.Id);
 			//parameters.Add(_bias.Id);
@@ -38,10 +38,14 @@ namespace OpenMined.Syft.Layer
 			controller.addModel(this);
 		}
 
-		public override FloatTensor Forward(FloatTensor input)
+        public override FloatTensor Forward(FloatTensor input)
 		{
-			return input.MM(_weights);
+			
+			FloatTensor output = input.MM(_weights);
+			activation = output.Id;
+		
+			
+			return output;
 		}
-
 	}
 }

@@ -6,7 +6,8 @@ using UnityEngine;
 using OpenMined.Syft.Tensor;
 using OpenMined.Network.Utils;
 using OpenMined.Syft.Layer;
-using OpenMined.Syft.Model;
+using OpenMined.Syft.Layer.Loss;
+using OpenMined.Syft.Tensor.Factories;
 using Random = UnityEngine.Random;
 
 
@@ -16,14 +17,20 @@ namespace OpenMined.Network.Controllers
 	{
 		[SerializeField] private ComputeShader shader;
 
-		private Dictionary<int, FloatTensor> tensors;
+		public FloatTensorFactory floatTensorFactory;
+		public IntTensorFactory intTensorFactory;
+		
 		private Dictionary<int, Model> models;
+		
+		public bool allow_new_tensors = true;
 
 		public SyftController (ComputeShader _shader)
 		{
 			shader = _shader;
 
-			tensors = new Dictionary<int, FloatTensor> ();
+			floatTensorFactory = new FloatTensorFactory(_shader, this);
+			intTensorFactory = new IntTensorFactory(_shader);
+			
 			models = new Dictionary<int, Model> ();
 		}
 
@@ -41,11 +48,6 @@ namespace OpenMined.Network.Controllers
 			return syn0;
 		}
 
-		public FloatTensor getTensor (int index)
-		{
-			return tensors [index];
-		}
-
 		public Model getModel(int index)
 		{
 			return models[index];
@@ -55,22 +57,6 @@ namespace OpenMined.Network.Controllers
 		{
 			return shader;
 		}
-
-		public void RemoveTensor (int index)
-		{
-			//Debug.LogFormat("<color=purple>Removing Tensor {0}</color>", index);
-			var tensor = tensors [index];
-			tensors.Remove (index);
-			tensor.Dispose ();
-		}
-
-		public int addTensor (FloatTensor tensor)
-		{
-			//Debug.LogFormat("<color=green>Adding Tensor {0}</color>", tensor.Id);
-			tensor.Controller = this;
-			tensors.Add (tensor.Id, tensor);
-			return (tensor.Id);
-		}
 		
         public int addModel (Model model)
         {
@@ -78,19 +64,6 @@ namespace OpenMined.Network.Controllers
             models.Add (model.Id, model);
             return (model.Id);
         }
-
-		public FloatTensor createZerosTensorLike(FloatTensor tensor) {
-			FloatTensor new_tensor = tensor.Copy ();
-			new_tensor.Zero_ ();
-			return new_tensor;
-		}
-
-		public FloatTensor createOnesTensorLike(FloatTensor tensor) {
-			FloatTensor new_tensor = tensor.Copy ();
-			new_tensor.Zero_ ();
-			new_tensor.Add ((float)1,true);
-			return new_tensor;
-		}
 
 		public string processMessage (string json_message)
 		{
@@ -102,38 +75,54 @@ namespace OpenMined.Network.Controllers
 
 				switch (msgObj.objectType)
 				{
-					case "tensor":
+					case "FloatTensor":
 					{
 						if (msgObj.objectIndex == 0 && msgObj.functionCall == "create")
 						{
-							FloatTensor tensor = new FloatTensor(this, _shape: msgObj.shape, _data: msgObj.data, _shader: this.Shader);
+                            FloatTensor tensor = floatTensorFactory.Create(_shape: msgObj.shape, _data: msgObj.data, _shader: this.Shader);
                             string ctnd = "";
                             if (tensor.Data.Length > 20)
                                 ctnd = String.Format(", ... (size {0})", tensor.Data.Length);
                             Debug.LogFormat("<color=magenta>createTensor:{0}</color> {1}{2}", tensor.Id, string.Join(", ", tensor.Data.Take(10)), ctnd);
 							return tensor.Id.ToString();
 						}
-						else if (msgObj.objectIndex > tensors.Count)
+						else
 						{
-							return "Invalid objectIndex: " + msgObj.objectIndex;
+							FloatTensor tensor = floatTensorFactory.Get(msgObj.objectIndex);
+							// Process message's function
+							return tensor.ProcessMessage(msgObj, this);
+						}
+					}
+					case "IntTensor":
+					{
+						if (msgObj.objectIndex == 0 && msgObj.functionCall == "create")
+						{
+							int[] data = new int[msgObj.data.Length];
+							for (int i = 0; i < msgObj.data.Length; i++)
+							{
+								data[i] = (int)msgObj.data[i];
+							}
+							IntTensor tensor = intTensorFactory.Create(_shape: msgObj.shape, _data: data, _shader: this.Shader);
+							return tensor.Id.ToString();
 						}
 						else
 						{
-							FloatTensor tensor = this.getTensor(msgObj.objectIndex);
-                            // Process message's function
+							IntTensor tensor = intTensorFactory.Get(msgObj.objectIndex);
+							// Process message's function
                             //Debug.LogFormat("<color=magenta>Run {0} on {1}</color>", msgObj.functionCall,tensor.Id);
-                            return tensor.ProcessMessage(msgObj, this);
+							return tensor.ProcessMessage(msgObj, this);
 						}
 					}
-                    case "model":
-                    {
-                        if (msgObj.functionCall == "create")
-                        {
+					case "model":
+					{
+						if (msgObj.functionCall == "create")
+						{
                             string model_type = msgObj.tensorIndexParams[0];
                             string arg_split = "";
                             if (msgObj.tensorIndexParams.Length > 0) arg_split = " : ";
 
-                            Debug.LogFormat("<color=magenta>createModel:</color> {0}{1}{2}", model_type, arg_split, string.Join(" ", msgObj.tensorIndexParams));
+                            Debug.LogFormat("<color=magenta>createModel:</color> {0}{1}{2}", model_type, arg_split, 
+                                string.Join(" ", msgObj.tensorIndexParams));
 
                             if (model_type == "conv2d")
                             {
@@ -146,45 +135,77 @@ namespace OpenMined.Network.Controllers
                                 Conv2d model = new Conv2d(this, args[0], args[1], kernel, stride, padding, dilation, args[10], bias);
                                 return model.Id.ToString();
                             }
-                            if (model_type == "linear")
+							if (model_type == "linear")
+							{
+								Linear model = new Linear(this, int.Parse(msgObj.tensorIndexParams[1]), int.Parse(msgObj.tensorIndexParams[2]));
+								return model.Id.ToString();
+							}
+							else if (model_type == "sigmoid")
+							{
+								Sigmoid model = new Sigmoid(this);
+								return model.Id.ToString();
+							}
+							else if (model_type == "sequential")
+							{
+								Sequential model = new Sequential(this);
+								return model.Id.ToString();
+							}
+							else if (model_type == "policy")
+							{
+								Policy model = new Policy(this,(Layer)getModel(int.Parse(msgObj.tensorIndexParams[1])));
+								return model.Id.ToString();
+							}
+                            else if (model_type == "tanh")
                             {
-                                Linear model = new Linear(this, int.Parse(msgObj.tensorIndexParams[1]), int.Parse(msgObj.tensorIndexParams[2]));
+                                Tanh model = new Tanh(this);
                                 return model.Id.ToString();
                             }
-                            else if (model_type == "sequential")
+                            else if (model_type == "crossentropyloss")
                             {
-                                Sequential model = new Sequential(this);
+                                CrossEntropyLoss model = new CrossEntropyLoss(this);
                                 return model.Id.ToString();
                             }
-                            else if (model_type == "sigmoid")
+                            else if (model_type == "mseloss")
                             {
-                                Sigmoid model = new Sigmoid(this);
+                                MSELoss model = new MSELoss(this);
                                 return model.Id.ToString();
                             }
-                            else if (model_type == "view")
-                            {
-                                int[] args = msgObj.tensorIndexParams.Skip(1).Select(s => int.Parse(s)).ToArray();
-
-                                View model = new View(this, args);
-                                return model.Id.ToString();
-                            }
-                        }
-                        else
-                        {
-                            Model model = this.getModel(msgObj.objectIndex);
-                            return model.ProcessMessage(msgObj, this);
-                        }
+						}
+						else
+						{
+							Model model = this.getModel(msgObj.objectIndex);
+							return model.ProcessMessage(msgObj, this);
+						}
                         return "Unity Error: SyftController.processMessage: Command not found:" + msgObj.objectType + ":" + msgObj.functionCall;
-                    }
-                    case "controller":
+					}
+					case "controller":
 					{
 						if (msgObj.functionCall == "num_tensors")
 						{
-							return tensors.Count + "";
+							return floatTensorFactory.Count() + "";
 						}
                         else if (msgObj.functionCall == "num_models")
+                        {
+                                return models.Count + "";
+						}
+                        else if (msgObj.functionCall == "new_tensors_allowed")
 						{
-							return models.Count + "";
+							
+							
+								Debug.LogFormat("New Tensors Allowed:{0}", msgObj.tensorIndexParams[0]);	
+								if (msgObj.tensorIndexParams[0] == "True")
+								{
+									allow_new_tensors = true;
+								} else if (msgObj.tensorIndexParams[0] == "False")
+								{
+									allow_new_tensors = false;
+								}
+								else
+								{
+									throw new Exception("Invalid parameter for new_tensors_allowed. Did you mean true or false?");
+								}
+							
+							return allow_new_tensors + "";
 						}
 						return "Unity Error: SyftController.processMessage: Command not found:" + msgObj.objectType + ":" + msgObj.functionCall;
 					}

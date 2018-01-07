@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace OpenMined.Syft.Layer
 {
-    public class Conv2d : Model
+    public class Conv2d : Layer
     {
         //private int _in_dim;
         private int _out_dim;
@@ -42,27 +42,27 @@ namespace OpenMined.Syft.Layer
             //_in_dim = input;
             _out_dim = output;
             _kernel_dims = kernel;
-            _stride_dims = new FloatTensor(controller, new int[] { 2 }, stride.Select(x => (float)x).ToArray());
-            _padding_dims = new FloatTensor(controller, new int[] { 2 }, padding.Select(x => (float)x).ToArray());
-            _dilation_dims = new FloatTensor(controller, new int[] { 2 }, dilation.Select(x => (float)x).ToArray());
-            _group = new FloatTensor(controller, new int[] { 1 }, new float[] { group });
+            _stride_dims = controller.floatTensorFactory.Create(new int[] { 2 }, stride.Select(x => (float)x).ToArray());
+            _padding_dims = controller.floatTensorFactory.Create(new int[] { 2 }, padding.Select(x => (float)x).ToArray());
+            _dilation_dims = controller.floatTensorFactory.Create(new int[] { 2 }, dilation.Select(x => (float)x).ToArray());
+            _group = controller.floatTensorFactory.Create(new int[] { 1 }, new float[] { group });
             _biased = bias;
             _transposed = transposed;
             int[] kernelShape = new int[] { output * group / input, kernel[0], kernel[1] };
             float[] _kernelData = kernelData;
             if (_kernelData == null) _kernelData = controller.RandomWeights(kernelShape.Aggregate(1, (a, b) => a * b));
 
-            _kernel = new FloatTensor(controller, _shape: kernelShape, _data: _kernelData, _autograd: true);
+            _kernel = controller.floatTensorFactory.Create(_shape: kernelShape, _data: _kernelData, _autograd: true);
             parameters.Add(_kernel.Id);
 _biased = false;
             if (_biased)
             {
                 Debug.Log("Nooooooooo");
-                _bias = new FloatTensor(controller, _shape: new int[] { output }, _autograd: true);
+                _bias = controller.floatTensorFactory.Create(_shape: new int[] { output }, _autograd: true);
             }
             else
             {
-                _bias = new FloatTensor(controller, _shape: new int[] { output });
+                _bias = controller.floatTensorFactory.Create(_shape: new int[] { output });
                 _bias.Zero_();
             }
             parameters.Add(_bias.Id);

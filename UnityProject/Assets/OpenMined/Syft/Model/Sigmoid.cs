@@ -4,7 +4,7 @@ using OpenMined.Syft.Tensor;
 
 namespace OpenMined.Syft.Layer
 {
-    public class View : Model
+    public class View : Layer
     {
         private int[] _outShape;
 
@@ -24,8 +24,8 @@ namespace OpenMined.Syft.Layer
             return input.View(_outShape);
         }
     }
-
-    public class Sigmoid : Model
+    
+    public class Sigmoid : Layer//Model
     {
         public Sigmoid(SyftController controller)
         {
@@ -38,7 +38,11 @@ namespace OpenMined.Syft.Layer
 
         public override FloatTensor Forward(FloatTensor input)
         {
-            return input.Sigmoid();
+			
+            FloatTensor output = input.Sigmoid();
+            activation = output.Id;
+
+            return output;
         }
     }
 }

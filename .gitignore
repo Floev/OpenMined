@@ -44,5 +44,9 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+!dist/OpenMined.unitypackage
 
 integration/__pycache__
+
+# IDE
+.idea
