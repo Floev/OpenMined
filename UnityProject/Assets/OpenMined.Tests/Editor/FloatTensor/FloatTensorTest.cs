@@ -1105,7 +1105,15 @@ namespace OpenMined.Tests.Editor.FloatTensor
             Assert.AreEqual(result[0], 3.0);
             Assert.AreEqual(result[1], 6.0);
 
-            /*result = tensor.Max(0, true);
+            result = tensor.Max(keepdim:true);
+
+            Console.WriteLine("tensor.Max(keepdim:true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 6.0);
+
+            result = tensor.Max(0, true);
 
             Console.WriteLine("tensor.Max(0, true) {0}", string.Join(", ", result.Data));
             Assert.AreEqual(result.Shape.Length, 2);
@@ -1114,7 +1122,17 @@ namespace OpenMined.Tests.Editor.FloatTensor
             Assert.AreEqual(result.Size, 3);
             Assert.AreEqual(result[0], 4.0);
             Assert.AreEqual(result[1], 5.0);
-            Assert.AreEqual(result[2], 6.0);*/
+            Assert.AreEqual(result[2], 6.0);
+
+            result = tensor.Max(1, true);
+
+            Console.WriteLine("tensor.Max(1, true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 2);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Shape[1], 1);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 3.0);
+            Assert.AreEqual(result[1], 6.0);
         }
 
         [Test]
@@ -1158,7 +1176,15 @@ namespace OpenMined.Tests.Editor.FloatTensor
             Assert.AreEqual(result[0], 6.0 / 3.0);
             Assert.AreEqual(result[1], 15.0 / 3.0);
 
-            /*result = tensor.Mean(0, true);
+            result = tensor.Mean(keepdim:true);
+
+            Console.WriteLine("tensor.Mean(keepdim:true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 21.0 / 6.0);
+
+            result = tensor.Mean(0, true);
 
             Console.WriteLine("tensor.Mean(0, true) {0}", string.Join(", ", result.Data));
             Assert.AreEqual(result.Shape.Length, 2);
@@ -1167,7 +1193,17 @@ namespace OpenMined.Tests.Editor.FloatTensor
             Assert.AreEqual(result.Size, 3);
             Assert.AreEqual(result[0], 5.0 / 2.0);
             Assert.AreEqual(result[1], 7.0 / 2.0);
-            Assert.AreEqual(result[2], 9.0 / 2.0);*/
+            Assert.AreEqual(result[2], 9.0 / 2.0);
+
+            result = tensor.Mean(1, true);
+
+            Console.WriteLine("tensor.Mean(1, true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 2);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Shape[1], 1);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 6.0 / 3.0);
+            Assert.AreEqual(result[1], 15.0 / 3.0);
         }
 
         [Test]
@@ -1211,7 +1247,15 @@ namespace OpenMined.Tests.Editor.FloatTensor
             Assert.AreEqual(result[0], 1.0);
             Assert.AreEqual(result[1], 4.0);
 
-            /*result = tensor.Min(0, true);
+            result = tensor.Min(keepdim:true);
+
+            Console.WriteLine("tensor.Min(keepdim:true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 1.0);
+
+            result = tensor.Min(0, true);
 
             Console.WriteLine("tensor.Min(0, true) {0}", string.Join(", ", result.Data));
             Assert.AreEqual(result.Shape.Length, 2);
@@ -1220,7 +1264,17 @@ namespace OpenMined.Tests.Editor.FloatTensor
             Assert.AreEqual(result.Size, 3);
             Assert.AreEqual(result[0], 1.0);
             Assert.AreEqual(result[1], 2.0);
-            Assert.AreEqual(result[2], 3.0);*/
+            Assert.AreEqual(result[2], 3.0);
+
+            result = tensor.Min(1, true);
+
+            Console.WriteLine("tensor.Min(1, true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 2);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Shape[1], 1);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 1.0);
+            Assert.AreEqual(result[1], 4.0);
         }
 
         [Test]
@@ -1439,6 +1493,104 @@ namespace OpenMined.Tests.Editor.FloatTensor
         }
 
         [Test]
+        public void Norm()
+        {
+            float[] data = new float[]
+            {
+                -1, 2, -3,
+                4, -5, 6
+            };
+
+            int[] shape = new int[] {2, 3};
+            var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
+
+            Console.WriteLine("tensor {0}", string.Join(", ", tensor.Data));
+
+            Syft.Tensor.FloatTensor result = tensor.Norm();
+
+            Console.WriteLine("tensor.Norm() {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 9.5393920141694561f, 1e-3);
+
+            result = tensor.Norm(0);
+
+            Console.WriteLine("tensor.Norm(0) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 3);
+            Assert.AreEqual(result.Size, 3);
+            Assert.AreEqual(result[0], 4.12310563f, 1e-3);
+            Assert.AreEqual(result[1], 5.38516481f, 1e-3);
+            Assert.AreEqual(result[2], 6.70820393, 1e-3);
+
+            result = tensor.Norm(1);
+
+            Console.WriteLine("tensor.Norm(1) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 3.74165739f, 1e-3);
+            Assert.AreEqual(result[1], 8.77496439f, 1e-3);
+
+            result = tensor.Norm(p:1);
+
+            Console.WriteLine("tensor.Norm(p:1) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 21.0);
+
+            result = tensor.Norm(0,p:1);
+
+            Console.WriteLine("tensor.Norm(0,p:1) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 3);
+            Assert.AreEqual(result.Size, 3);
+            Assert.AreEqual(result[0], 5.0);
+            Assert.AreEqual(result[1], 7.0);
+            Assert.AreEqual(result[2], 9.0);
+
+            result = tensor.Norm(1,p:1);
+
+            Console.WriteLine("tensor.Norm(1,p:1) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 6.0);
+            Assert.AreEqual(result[1], 15.0);
+
+            result = tensor.Norm(keepdim:true);
+
+            Console.WriteLine("tensor.Norm(keepdim:true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 9.5393920141694561f, 1e-3);
+
+            result = tensor.Norm(0, keepdim:true);
+
+            Console.WriteLine("tensor.Norm(0, keepdim:true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 2);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Shape[1], 3);
+            Assert.AreEqual(result.Size, 3);
+            Assert.AreEqual(result[0], 4.12310563f, 1e-3);
+            Assert.AreEqual(result[1], 5.38516481f, 1e-3);
+            Assert.AreEqual(result[2], 6.70820393, 1e-3);
+
+            result = tensor.Norm(1, keepdim:true);
+
+            Console.WriteLine("tensor.Norm(1, keepdim:true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 2);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Shape[1], 1);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 3.74165739f, 1e-3);
+            Assert.AreEqual(result[1], 8.77496439f, 1e-3);
+        }
+
+        [Test]
         public void Prod()
         {
             float[] data = new float[]
@@ -1479,7 +1631,15 @@ namespace OpenMined.Tests.Editor.FloatTensor
             Assert.AreEqual(result[0], 6.0);
             Assert.AreEqual(result[1], 120.0);
 
-         /*   result = tensor.Prod(0, true);
+            result = tensor.Prod(keepdim:true);
+
+            Console.WriteLine("tensor.Prod(keepdim:true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 720.0);
+
+            result = tensor.Prod(0, true);
 
             Console.WriteLine("tensor.Prod(0, true) {0}", string.Join(", ", result.Data));
             Assert.AreEqual(result.Shape.Length, 2);
@@ -1488,7 +1648,17 @@ namespace OpenMined.Tests.Editor.FloatTensor
             Assert.AreEqual(result.Size, 3);
             Assert.AreEqual(result[0], 4.0);
             Assert.AreEqual(result[1], 10.0);
-            Assert.AreEqual(result[2], 18.0);*/
+            Assert.AreEqual(result[2], 18.0);
+
+            result = tensor.Prod(1, true);
+
+            Console.WriteLine("tensor.Prod(1, true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 2);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Shape[1], 1);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 6.0);
+            Assert.AreEqual(result[1], 120.0);
         }
 
         [Test]
@@ -1998,6 +2168,329 @@ namespace OpenMined.Tests.Editor.FloatTensor
         }
 
         [Test]
+        public void SplitSameBySize()
+        {
+            float[] data = {1, 2, 3, 4, 5, 6, 7, 8};
+            int[] shape = {2, 4};
+
+            var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
+
+            var splits = tensor.Split(1);
+            Assert.AreEqual(2, splits.Length);
+
+            for(int i = 0; i < splits.Length; i++)
+            {
+                Assert.AreEqual(2, splits[i].Shape.Length);
+            }
+
+            int[] expectedShape = {1, 4};
+
+            for(int i = 0; i < splits.Length; i++){
+                for(int j = 0; j < splits[0].Shape.Length; j++)
+                {
+                    Assert.AreEqual(expectedShape[j], splits[i].Shape[j]);
+                }
+            }
+
+            float[] splitData1 = {1, 2, 3, 4};
+            float[] splitData2 = {5, 6, 7, 8};
+
+            var expectedTensor1 = ctrl.floatTensorFactory.Create(_data: splitData1, _shape: expectedShape);
+            var expectedTensor2 =   ctrl.floatTensorFactory.Create(_data: splitData2, _shape: expectedShape);
+
+            for(int i = 0; i < expectedShape[0]; i++){
+                for(int j = 0; j < expectedShape[1]; j++)
+                {   
+                    Assert.AreEqual(expectedTensor1[i, j], splits[0][i, j]);
+                    Assert.AreEqual(expectedTensor2[i, j], splits[1][i, j]);
+                }
+
+            }
+
+            var splits2 = tensor.Split(2, dim:1);
+            Assert.AreEqual(2, splits2.Length);
+
+            for(int i = 0; i < splits2.Length; i++)
+            {
+                Assert.AreEqual(2, splits2[i].Shape.Length);
+            }
+
+            int[] expectedShape2 = {2, 2};
+
+            for(int i = 0; i < splits2.Length; i++)
+            {
+                for(int j = 0; j < splits2[0].Shape.Length; j++)
+                {
+                    Assert.AreEqual(expectedShape2[j], splits2[i].Shape[j]);
+                }
+            }
+
+            float[] splitData3 = {1, 2, 5, 6};
+            float[] splitData4 = {3, 4, 7, 8};
+            
+            var expectedTensor3 = ctrl.floatTensorFactory.Create(_data: splitData3, _shape: expectedShape2);
+            var expectedTensor4 = ctrl.floatTensorFactory.Create(_data: splitData4, _shape: expectedShape2);
+
+            for(int i = 0; i < expectedShape2[0]; i++){
+                for(int j = 0; j < expectedShape2[1]; j++)
+                {   
+                    Assert.AreEqual(expectedTensor3[i, j], splits2[0][i, j]);
+                    Assert.AreEqual(expectedTensor4[i, j], splits2[1][i, j]);
+                }
+            }
+        }
+
+        [Test]
+        public void SplitDiffBySize()
+        {
+            float[] data = {1, 2, 3, 4, 5, 6, 7, 8};
+            int[] shape = {2, 4};
+
+            var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
+            
+            var splits = tensor.Split(3, 1);
+            Assert.AreEqual(2, splits.Length);
+
+            for(int i = 0; i < splits.Length; i++)
+            {
+                Assert.AreEqual(2, splits[i].Shape.Length);
+            }
+
+            int[] expectedShape1 = {2, 3};
+            int[] expectedShape2 = {2, 1};
+
+            
+            for(int j = 0; j < splits[0].Shape.Length; j++)
+            {
+                Assert.AreEqual(expectedShape1[j], splits[0].Shape[j]);
+                Assert.AreEqual(expectedShape2[j], splits[1].Shape[j]);
+            }
+            
+            float[] splitData1 = {1, 2, 3, 5, 6, 7};
+            float[] splitData2 = {4, 8};
+
+            var expectedTensor1 = ctrl.floatTensorFactory.Create(_data: splitData1, _shape: expectedShape1);
+            var expectedTensor2 =  ctrl.floatTensorFactory.Create(_data: splitData2, _shape: expectedShape2);
+
+            for(int i = 0; i < expectedShape1[0]; i++){
+                for(int j = 0; j < expectedShape1[1]; j++)
+                {   
+                    Assert.AreEqual(expectedTensor1[i, j], splits[0][i, j]);
+                }
+            }
+
+            for(int i = 0; i < expectedShape2[0]; i++){
+                for(int j = 0; j < expectedShape2[1]; j++)
+                {   
+                    Assert.AreEqual(expectedTensor2[i, j], splits[1][i, j]);
+                }
+            }
+        }
+
+        [Test]
+        public void SplitSameBySections()
+        {
+            float[] data = {1, 2, 3, 4, 5, 6, 7, 8};
+            int[] shape = {2, 4};
+
+            var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
+
+            int[] sections = {1,1};
+            var splits = tensor.Split(sections);
+            Assert.AreEqual(2, splits.Length);
+
+            for(int i = 0; i < splits.Length; i++)
+            {
+                Assert.AreEqual(2, splits[i].Shape.Length);
+            }
+
+            int[] expectedShape = {1, 4};
+
+            for(int i = 0; i < splits.Length; i++){
+                for(int j = 0; j < splits[0].Shape.Length; j++)
+                {
+                    Assert.AreEqual(expectedShape[j], splits[i].Shape[j]);
+                }
+            }
+
+            float[] splitData1 = {1, 2, 3, 4};
+            float[] splitData2 = {5, 6, 7, 8};
+
+            var expectedTensor1 = ctrl.floatTensorFactory.Create(_data: splitData1, _shape: expectedShape);
+            var expectedTensor2 =   ctrl.floatTensorFactory.Create(_data: splitData2, _shape: expectedShape);
+
+            for(int i = 0; i < expectedShape[0]; i++){
+                for(int j = 0; j < expectedShape[1]; j++)
+                {   
+                    Assert.AreEqual(expectedTensor1[i, j], splits[0][i, j]);
+                    Assert.AreEqual(expectedTensor2[i, j], splits[1][i, j]);
+                }
+
+            }
+
+            int[] sections2 = {2,2};
+            var splits2 = tensor.Split(sections2, dim:1);
+            Assert.AreEqual(2, splits2.Length);
+
+            for(int i = 0; i < splits2.Length; i++)
+            {
+                Assert.AreEqual(2, splits2[i].Shape.Length);
+            }
+
+            int[] expectedShape2 = {2, 2};
+
+            for(int i = 0; i < splits2.Length; i++)
+            {
+                for(int j = 0; j < splits2[0].Shape.Length; j++)
+                {
+                    Assert.AreEqual(expectedShape2[j], splits2[i].Shape[j]);
+                }
+            }
+
+            float[] splitData3 = {1, 2, 5, 6};
+            float[] splitData4 = {3, 4, 7, 8};
+            
+            var expectedTensor3 = ctrl.floatTensorFactory.Create(_data: splitData3, _shape: expectedShape2);
+            var expectedTensor4 = ctrl.floatTensorFactory.Create(_data: splitData4, _shape: expectedShape2);
+
+            for(int i = 0; i < expectedShape2[0]; i++){
+                for(int j = 0; j < expectedShape2[1]; j++)
+                {   
+                    Assert.AreEqual(expectedTensor3[i, j], splits2[0][i, j]);
+                    Assert.AreEqual(expectedTensor4[i, j], splits2[1][i, j]);
+                }
+            }
+
+        }
+
+        [Test]
+        public void SplitDiffBySections()
+        {
+            float[] data = {1, 2, 3, 4, 5, 6, 7, 8};
+            int[] shape = {2, 4};
+
+            var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
+
+            int[] sections = {3, 1};
+            var splits = tensor.Split(sections, 1);
+            Assert.AreEqual(2, splits.Length);
+
+            for(int i = 0; i < splits.Length; i++)
+            {
+                Assert.AreEqual(2, splits[i].Shape.Length);
+            }
+
+            int[] expectedShape1 = {2, 3};
+            int[] expectedShape2 = {2, 1};
+
+            
+            for(int i = 0; i < splits[0].Shape.Length; i++)
+            {
+                Assert.AreEqual(expectedShape1[i], splits[0].Shape[i]);
+                Assert.AreEqual(expectedShape2[i], splits[1].Shape[i]);
+            }
+            
+            float[] splitData1 = {1, 2, 3, 5, 6, 7};
+            float[] splitData2 = {4, 8};
+
+            var expectedTensor1 = ctrl.floatTensorFactory.Create(_data: splitData1, _shape: expectedShape1);
+            var expectedTensor2 =  ctrl.floatTensorFactory.Create(_data: splitData2, _shape: expectedShape2);
+
+            for(int i = 0; i < expectedShape1[0]; i++){
+                for(int j = 0; j < expectedShape1[1]; j++)
+                {   
+                    Assert.AreEqual(expectedTensor1[i, j], splits[0][i, j]);
+                }
+            }
+
+            for(int i = 0; i < expectedShape2[0]; i++){
+                for(int j = 0; j < expectedShape2[1]; j++)
+                {   
+                    Assert.AreEqual(expectedTensor2[i, j], splits[1][i, j]);
+                }
+            }
+        }
+
+        [Test]
+        public void SplitSizeLargerThanDim()
+        {
+            float[] data = {1, 2, 3, 4};
+            int[] shape = {1, 4};
+
+            var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
+            
+            var splits = tensor.Split(3);
+
+            Assert.AreEqual(1, splits.Length);
+            Assert.AreEqual(2, splits[0].Shape.Length);
+
+            for(int i = 0; i < splits[0].Shape.Length; i++)
+            {
+                Assert.AreEqual(shape[i], splits[0].Shape[i]);
+            }
+
+            for(int i = 0; i < shape[0]; i++){
+                for(int j = 0; j < shape[1]; j++)
+                {   
+                    Assert.AreEqual(tensor[i, j], splits[0][i, j]);
+                }
+            }
+        }
+
+        [Test]
+        public void SplitSectionsWithZero()
+        {
+            float[] data = {1, 2, 3, 4, 5, 6};
+            int[] shape = {2, 3};
+
+            var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
+            
+            int[] sections = {1,0,2};
+            var splits = tensor.Split(sections, 1);
+
+            Assert.AreEqual(3, splits.Length);
+
+            for(int i = 0; i < splits.Length; i++)
+            {
+                Assert.AreEqual(2, splits[i].Shape.Length);
+            }
+
+            int[] expectedShape1 = {2, 1};
+            int[] expectedShape2 = {2, 0};
+            int[] expectedShape3 = {2, 2};
+
+            
+            for(int i = 0; i < splits[0].Shape.Length; i++)
+            {
+                Assert.AreEqual(expectedShape1[i], splits[0].Shape[i]);
+                Assert.AreEqual(expectedShape2[i], splits[1].Shape[i]);
+                Assert.AreEqual(expectedShape3[i], splits[2].Shape[i]);
+            }
+
+            float[] splitData1 = {1, 4};
+            float[] splitData3 = {2, 3, 5, 6};
+
+            var expectedTensor1 = ctrl.floatTensorFactory.Create(_data: splitData1, _shape: expectedShape1);
+            var expectedTensor3 =   ctrl.floatTensorFactory.Create(_data: splitData3, _shape: expectedShape3);
+
+            for(int i = 0; i < expectedShape1[0]; i++){
+                for(int j = 0; j < expectedShape1[1]; j++)
+                {   
+                    Assert.AreEqual(expectedTensor1[i, j], splits[0][i, j]);
+                }
+            }
+
+            Assert.AreEqual(0, splits[1].Data.Length);
+
+            for(int i = 0; i < expectedShape3[0]; i++){
+                for(int j = 0; j < expectedShape3[1]; j++)
+                {   
+                    Assert.AreEqual(expectedTensor3[i, j], splits[2][i, j]);
+                }
+            }
+        }
+
+        [Test]
         public void Squeeze()
         {
             float[] data1 = {1, 2, 3, 4};
@@ -2082,6 +2575,103 @@ namespace OpenMined.Tests.Editor.FloatTensor
             }
         }
 
+        [Test]
+        public void Std()
+        {
+            float[] data = new float[]
+            {
+                1, 2, 3,
+                1, 4, 9
+            };
+
+            int[] shape = new int[] {2, 3};
+            var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
+
+            Console.WriteLine("tensor {0}", string.Join(", ", tensor.Data));
+
+            Syft.Tensor.FloatTensor result = tensor.Std();
+
+            Console.WriteLine("tensor.Std() {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 3.011090610836324f, 1e-3);
+
+            result = tensor.Std(0);
+
+            Console.WriteLine("tensor.Std(0) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 3);
+            Assert.AreEqual(result.Size, 3);
+            Assert.AreEqual(result[0], 0.0);
+            Assert.AreEqual(result[1], 1.41421356f, 1e-3);
+            Assert.AreEqual(result[2], 4.24264069f, 1e-3);
+
+            result = tensor.Std(1);
+
+            Console.WriteLine("tensor.Std(1) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 1.0);
+            Assert.AreEqual(result[1], 4.04145188f, 1e-3);
+
+            result = tensor.Std(unbiased:false);
+
+            Console.WriteLine("tensor.Std(unbiased:false) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 2.7487370837451071f, 1e-3);
+
+            result = tensor.Std(0, unbiased:false);
+
+            Console.WriteLine("tensor.Std(0, unbiased:false) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 3);
+            Assert.AreEqual(result.Size, 3);
+            Assert.AreEqual(result[0], 0.0);
+            Assert.AreEqual(result[1], 1.0);
+            Assert.AreEqual(result[2], 3.0);
+
+            result = tensor.Std(1, unbiased:false);
+
+            Console.WriteLine("tensor.Std(1, unbiased:false) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 0.81649658f, 1e-3);
+            Assert.AreEqual(result[1], 3.29983165f, 1e-3);
+
+            result = tensor.Std(keepdim:true);
+
+            Console.WriteLine("tensor.Std(keepdim:true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 3.011090610836324f, 1e-3);
+
+            result = tensor.Std(0,keepdim:true);
+
+            Console.WriteLine("tensor.Std(0, keepdim:true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 2);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Shape[1], 3);
+            Assert.AreEqual(result.Size, 3);
+            Assert.AreEqual(result[0], 0.0);
+            Assert.AreEqual(result[1], 1.41421356f, 1e-3);
+            Assert.AreEqual(result[2], 4.24264069f, 1e-3);
+
+            result = tensor.Std(1,keepdim:true);
+
+            Console.WriteLine("tensor.Std(1, keepdim:true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 2);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Shape[1], 1);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 1.0);
+            Assert.AreEqual(result[1], 4.04145188f, 1e-3);
+        }
 
         [Test]
         public void SubtractElementwise()
@@ -2301,7 +2891,15 @@ namespace OpenMined.Tests.Editor.FloatTensor
             Assert.AreEqual(result[0], 6.0);
             Assert.AreEqual(result[1], 15.0);
 
-            /*result = tensor.Sum(0, true);
+            result = tensor.Sum(keepdim:true);
+
+            Console.WriteLine("tensor.Sum() {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 21.0);
+
+            result = tensor.Sum(0, true);
 
             Console.WriteLine("tensor.Sum(0, true) {0}", string.Join(", ", result.Data));
             Assert.AreEqual(result.Shape.Length, 2);
@@ -2310,7 +2908,17 @@ namespace OpenMined.Tests.Editor.FloatTensor
             Assert.AreEqual(result.Size, 3);
             Assert.AreEqual(result[0], 5.0);
             Assert.AreEqual(result[1], 7.0);
-            Assert.AreEqual(result[2], 9.0);*/
+            Assert.AreEqual(result[2], 9.0);
+
+            result = tensor.Sum(1, true);
+
+            Console.WriteLine("tensor.Sum(1) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 2);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Shape[1], 1);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 6.0);
+            Assert.AreEqual(result[1], 15.0);
         }
 
         [Test]
@@ -2625,6 +3233,103 @@ namespace OpenMined.Tests.Editor.FloatTensor
             Assert.AreEqual(3, newTensor.Shape.Length);
         }
 
+        [Test]
+        public void Var()
+        {
+            float[] data = new float[]
+            {
+                1, 2, 3,
+                1, 4, 9
+            };
+
+            int[] shape = new int[] {2, 3};
+            var tensor = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
+
+            Console.WriteLine("tensor {0}", string.Join(", ", tensor.Data));
+
+            Syft.Tensor.FloatTensor result = tensor.Var();
+
+            Console.WriteLine("tensor.Var() {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 9.0666666666666664f, 1e-3);
+
+            result = tensor.Var(0);
+
+            Console.WriteLine("tensor.Var(0) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 3);
+            Assert.AreEqual(result.Size, 3);
+            Assert.AreEqual(result[0], 0.0);
+            Assert.AreEqual(result[1], 2.0);
+            Assert.AreEqual(result[2], 18.0);
+
+            result = tensor.Var(1);
+
+            Console.WriteLine("tensor.Var(1) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 1.0);
+            Assert.AreEqual(result[1], 16.33333333f, 1e-3);
+
+            result = tensor.Var(unbiased:false);
+
+            Console.WriteLine("tensor.Var(unbiased:false) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 7.5555555555555545f, 1e-3);
+
+            result = tensor.Var(0, unbiased:false);
+
+            Console.WriteLine("tensor.Var(0, unbiased:false) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 3);
+            Assert.AreEqual(result.Size, 3);
+            Assert.AreEqual(result[0], 0.0);
+            Assert.AreEqual(result[1], 1.0);
+            Assert.AreEqual(result[2], 9.0);
+
+            result = tensor.Var(1, unbiased:false);
+
+            Console.WriteLine("tensor.Var(1, unbiased:false) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 0.66666667f, 1e-3);
+            Assert.AreEqual(result[1], 10.88888889f, 1e-3);
+
+            result = tensor.Var(keepdim:true);
+
+            Console.WriteLine("tensor.Var(keepdim:true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 1);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Size, 1);
+            Assert.AreEqual(result[0], 9.0666666666666664f, 1e-3);
+
+            result = tensor.Var(0,keepdim:true);
+
+            Console.WriteLine("tensor.Var(0,keepdim:true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 2);
+            Assert.AreEqual(result.Shape[0], 1);
+            Assert.AreEqual(result.Shape[1], 3);
+            Assert.AreEqual(result.Size, 3);
+            Assert.AreEqual(result[0], 0.0);
+            Assert.AreEqual(result[1], 2.0);
+            Assert.AreEqual(result[2], 18.0);
+
+            result = tensor.Var(1,keepdim:true);
+
+            Console.WriteLine("tensor.Var(1,keepdim:true) {0}", string.Join(", ", result.Data));
+            Assert.AreEqual(result.Shape.Length, 2);
+            Assert.AreEqual(result.Shape[0], 2);
+            Assert.AreEqual(result.Shape[1], 1);
+            Assert.AreEqual(result.Size, 2);
+            Assert.AreEqual(result[0], 1.0);
+            Assert.AreEqual(result[1], 16.33333333f, 1e-3);
+        }
         [Test]
         public void View()
         {

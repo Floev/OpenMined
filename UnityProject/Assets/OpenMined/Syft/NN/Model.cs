@@ -58,25 +58,34 @@ namespace OpenMined.Syft.Layer
 
             switch (msgObj.functionCall)
             {
-            case "forward": 
-                return ProcessForwardMessage (msgObj, ctrl);
-            case "params":
-                return ProcessParamsMessage (msgObj, ctrl);
-            case "param_count":
-                return getParameterCount()+"";
-            case "activation":
+                case "forward":
+                    return ProcessForwardMessage(msgObj, ctrl);
+                case "params":
+                    return ProcessParamsMessage(msgObj, ctrl);
+                case "param_count":
+                    return getParameterCount() + "";
+                case "activation":
                 {
-                    return activation + "";   
+                    return activation + "";
                 }
-            case "model_type":
+                case "model_type":
                 {
                     return model_type;
                 }
-            case "zero_grad":
+                case "zero_grad":
                 {
                     ProcessZeroGradMessage();
                     return "";
                 }
+
+                case "set_id":
+                {
+                    int new_id = int.Parse(msgObj.tensorIndexParams[0]);
+                    this.controller.setModelId(this.Id,new_id);
+                    this.id = new_id;
+                    return "";
+                }
+        
             }
 
             return ProcessMessageAsLayerOrLoss(msgObj, ctrl);
