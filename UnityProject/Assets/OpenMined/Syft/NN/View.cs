@@ -1,14 +1,18 @@
-﻿using System;
+using System;
 using OpenMined.Network.Controllers;
 using OpenMined.Syft.Tensor;
 
 namespace OpenMined.Syft.Layer
 {
-    public class Sigmoid : Layer
+    public class View : Layer
     {
-        public Sigmoid(SyftController controller)
+        private int[] _outShape;
+
+        public View(SyftController controller, int[] outShape)
         {
-            init("sigmoid");
+            init("view");
+            _outShape = new int[outShape.Length];
+            outShape.CopyTo(_outShape, 0);
 
 #pragma warning disable 420
             id = System.Threading.Interlocked.Increment(ref nCreated);
@@ -17,13 +21,9 @@ namespace OpenMined.Syft.Layer
 
         public override FloatTensor Forward(FloatTensor input)
         {
-			
-            FloatTensor output = input.Sigmoid();
-            activation = output.Id;
-
-            return output;
+            return input.View(_outShape);
         }
-        
+
         public override int getParameterCount(){return 0;}
     }
 }

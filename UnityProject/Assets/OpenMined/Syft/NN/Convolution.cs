@@ -1,6 +1,6 @@
-﻿//using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using OpenMined.Network.Controllers;
-//using OpenMined.Network.Utils;
+using OpenMined.Network.Utils;
 using OpenMined.Syft.Tensor;
 //using OpenMined.Syft.NN;
 using UnityEngine;
@@ -92,5 +92,7 @@ _biased = false;
             */
             return input.Conv2d(_kernel, _bias, _stride_dims, _padding_dims, _dilation_dims, _group,_transposed);
         }
+
+        public override int getParameterCount() { return _kernel.Size + _bias.Size; }
     }
 }
