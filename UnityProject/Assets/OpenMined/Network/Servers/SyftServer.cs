@@ -10,7 +10,7 @@ namespace OpenMined.Network.Servers
 		private NetMqPublisher _netMqPublisher;
 		private string _response;
 
-		private SyftController controller;
+		public SyftController controller;
 
 		[SerializeField] private ComputeShader shader;
 

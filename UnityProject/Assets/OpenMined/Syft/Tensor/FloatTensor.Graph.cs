@@ -106,14 +106,11 @@ namespace OpenMined.Syft.Tensor
 							if (child.creators.Count > 1)
 								if (factory.Get(child.creators[1]).data[0] != scalar_input)
 									keep_looking = true;
-
-
 						
-						if (tensor_inputs != null && tensor_inputs.Length == 1)
+						if (tensor_inputs != null && tensor_inputs.Length >= 1)
 							foreach(FloatTensor tensor in tensor_inputs)
 								if (!child.creators.Contains(tensor.id))
 									keep_looking = true;
-						
 
 						if (keep_looking)
 							continue;
