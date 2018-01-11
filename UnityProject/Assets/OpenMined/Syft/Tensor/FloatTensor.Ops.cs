@@ -784,7 +784,7 @@ namespace OpenMined.Syft.Tensor
                     }
                 }
             }
-/*
+
             Debug.LogFormat("Expand output id {0} ", result.Id);
             Debug.LogFormat("Strides:");
             foreach (int i in result.strides)
@@ -795,7 +795,7 @@ namespace OpenMined.Syft.Tensor
             Debug.LogFormat("data:");
             foreach (float i in result.data)
             { Debug.Log(i); };
-*/
+
             Debug.LogFormat("Expand output {0} ", result.Print());
 
             return result;

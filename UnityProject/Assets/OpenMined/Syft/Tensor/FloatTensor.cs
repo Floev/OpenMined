@@ -1212,9 +1212,7 @@ namespace OpenMined.Syft.Tensor
                 {
                     for (int i = 0; i < d1; i++)
                     {
-//                        Debug.LogFormat("Before {0} + {1} + {2}", i, j * d1, k * d1 * d2);
-//                        Debug.LogFormat("Now {0} + {1} + {2}", i, j * s2, k * s3);
-                        float f = this[i + j * s2 + k * s3];
+                        float f = this[i * s1 + j * s2 + k * s3];
                         print += f.ToString("0.0000") + ", ";
                     }
                     print += "\n";

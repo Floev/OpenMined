@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using OpenMined.Network.Controllers;
 using System.Linq;
+using UnityEngine;
 
 namespace OpenMined.Tests.Editor.FloatTensor
 {
@@ -1250,7 +1251,6 @@ namespace OpenMined.Tests.Editor.FloatTensor
         [Test]
         public void ExpandAutograd()
         {
-
             int[] ash = new int[] {1,4,1};
             float[] a_data = new float[] {1, 1, 1, 1};
             var a = ctrl.floatTensorFactory.Create(_data: a_data, _shape: ash);
@@ -1262,12 +1262,13 @@ namespace OpenMined.Tests.Editor.FloatTensor
             var a_grad = ctrl.floatTensorFactory.Create(_data: new float[]{4,4,4,4}, _shape: new int[] {1, 4, 1});
 
             var c = a.Expand(new int[] {2,4,2}).Contiguous();
+
             c.Backward(c_grad);
 
             for (int i = 0; i < a.Size; i++)
             {
                 // grad is correct
-                Assert.True(Math.Abs(a_grad.Data[i] - a.Grad.Data[i]) < 0.000001);
+                Assert.AreEqual(a_grad.Data[i], a.Grad.Data[i], 0.000001);
             }
             
             Assert.True(a.Grad.Shape[0] == a.Shape[0]);
@@ -1283,9 +1284,9 @@ namespace OpenMined.Tests.Editor.FloatTensor
             for (int i = 0; i < a.Size; i++)
             {
                 // grad is correct
-                Assert.True(Math.Abs(a_grad.Data[i] - a.Grad.Data[i]) < 0.000001);
+                Assert.AreEqual(a_grad.Data[i], a.Grad.Data[i], 0.000001);
             }
-            
+
             Assert.True(a.Grad.Shape[0] == a.Shape[0]);
             Assert.True(a.Grad.Shape[1] == a.Shape[1]);
             
@@ -1294,7 +1295,7 @@ namespace OpenMined.Tests.Editor.FloatTensor
 
             // see if it's allocating new tensors during the forward pass
             ctrl.allow_new_tensors = false;
-            
+
             // check that repeating the forward pass doesn't break it
             c = a.Expand(new int[] {2,4,2}).Contiguous();
             c = a.Expand(new int[] {2,4,2}).Contiguous();
