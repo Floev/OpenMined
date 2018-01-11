@@ -322,7 +322,6 @@ namespace OpenMined.Syft.Tensor
 
                     return result.Id.ToString();
                 }
-
                 case "contiguous":
                 {
                     var result = Contiguous();
@@ -923,17 +922,17 @@ namespace OpenMined.Syft.Tensor
                 case "to_numpy":
                 {
                     if (DataOnGpu)
-                        {
-                            var tmpData = new float[size];
-                            dataBuffer.GetData(tmpData);
-                            return string.Join(" ", tmpData);
+                    {
+                        var tmpData = new float[size];
+                        dataBuffer.GetData(tmpData);
+                        return string.Join(" ", tmpData);
 
-                        } else
-                        {
-                            return string.Join(" ", Data);
-
-                        }
                     }
+                    else
+                    {
+                        return string.Join(" ", Data);
+                    }
+                }
                 case "tan":
                 {
                     var result = Tan();
@@ -1188,15 +1187,24 @@ namespace OpenMined.Syft.Tensor
 
             string print = "";
 
+            int d1 = shape[shape.Length - 1];
+            int s1 = strides[shape.Length - 1];
+            int d2 = 1;
+            int s2 = d1;
+            if (shape.Length > 1)
+            {
+                d2 = shape[shape.Length - 2];
+                s2 = strides[shape.Length - 2];
+            }
+            int d3 = 1;
+            int s3 = d2 * s2;
+            if (shape.Length > 2)
+            {
+                d3 = shape[shape.Length - 3];
+                s3 = strides[shape.Length - 3];
+            };
             if (shape.Length > 3)
                 print += "Only printing the last 3 dimesnions\n";
-            int d3 = 1;
-            if (shape.Length > 2)
-                d3 = shape[shape.Length - 3];
-            int d2 = 1;
-            if (shape.Length > 1)
-                d2 = shape[shape.Length - 2];
-            int d1 = shape[shape.Length - 1];
 
             for (int k = 0; k < d3; k++)
             {
@@ -1204,7 +1212,9 @@ namespace OpenMined.Syft.Tensor
                 {
                     for (int i = 0; i < d1; i++)
                     {
-                        float f = this[i + j * d1 + k * d1 * d2];
+//                        Debug.LogFormat("Before {0} + {1} + {2}", i, j * d1, k * d1 * d2);
+//                        Debug.LogFormat("Now {0} + {1} + {2}", i, j * s2, k * s3);
+                        float f = this[i + j * s2 + k * s3];
                         print += f.ToString("0.0000") + ", ";
                     }
                     print += "\n";

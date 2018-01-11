@@ -365,8 +365,8 @@ namespace OpenMined.Syft.Tensor
             return result;
         }
 
-//        public FloatTensor Conv2d(FloatTensor kernel, FloatTensor bias, int[] stride, int[] padding, int[] dilation, int group, bool transposed = false)
-        public FloatTensor Conv2d(FloatTensor kernel, FloatTensor bias, FloatTensor stride, FloatTensor padding, FloatTensor dilation, FloatTensor group, bool transposed = false)
+        //        public FloatTensor Conv2d(FloatTensor kernel, FloatTensor bias, int[] stride, int[] padding, int[] dilation, int group, bool transposed = false)
+        public FloatTensor Conv2d(FloatTensor kernel, IntTensor stride, IntTensor padding, IntTensor dilation, IntTensor group, bool transposed = false, FloatTensor bias = null)
         {
             //            if (this._shape1[1] != shape2[0])
             //              throw new InvalidOperationException(String.Format("Matrix multiply not possible: {0} & {1}.", shape1[1], shape2[0]));
@@ -376,7 +376,7 @@ namespace OpenMined.Syft.Tensor
             //in simplest case:
             //Shape = [i,j,k,l] and kernel = [o,m,n] -> output [i,r,p,q] where p = k+1-m, q=l+1-n, r = j*o
 
-//            Debug.LogFormat("Conv2d inputs: {0},{1},{2},{3},{4},{5},{6},{7}",this.Print(), kernel.Print(), bias.Print(), stride.Print(), padding.Print(), dilation.Print(), group.Print(), transposed);
+            //            Debug.LogFormat("Conv2d inputs: {0},{1},{2},{3},{4},{5},{6},{7}",this.Print(), kernel.Print(), bias.Print(), stride.Print(), padding.Print(), dilation.Print(), group.Print(), transposed);
 
             int[] outShape = new int[4];
             if (transposed)
@@ -389,20 +389,35 @@ namespace OpenMined.Syft.Tensor
             }
             else
             {
-//                Debug.LogFormat("Shape {0}, kerShap {1}", String.Join(",", Shape), String.Join(",", kernel.Shape));
+                //                Debug.LogFormat("Shape {0}, kerShap {1}", String.Join(",", Shape), String.Join(",", kernel.Shape));
                 outShape = new int[] { Shape[0],//samples
                     kernel.Shape[0] * Shape[1] / (int) group[0] ,//feautres
                     Shape[2] - ( kernel.Shape[1] - 1 ),//conv dim1
                     Shape[3] - ( kernel.Shape[2] - 1 ),//conv dim2
                 };
-            }
-            var result = factory.Create(outShape,
+            };
+            /*var result = factory.Create(outShape,
                 //_shader: this.shader);
                        _dataOnGpu: dataOnGpu,
                        _autograd: autograd,
                        _keepgrads: keepgrads//,
                        //_creation_op: creation_op
                        );
+            */
+            FloatTensor result = null;
+            FloatTensor[] tensor_inputs = null;
+            if (bias != null)
+            {
+                tensor_inputs = new FloatTensor[] { kernel, bias };
+            }
+            else { tensor_inputs = new FloatTensor[] { kernel }; };
+
+            result = HookGraph(result: ref result,
+                    tensor_inputs: tensor_inputs,
+                    indices: new IntTensor[] { stride, padding, dilation, group },
+                    creation_op: "conv2d",
+                    inline: false,
+                    resultShape: outShape);
 
             if (dataOnGpu)
             {
@@ -739,9 +754,11 @@ namespace OpenMined.Syft.Tensor
         
         public FloatTensor Expand(int[] sizes) {
 			if (sizes.Length == Shape.Length) {
+                Debug.Log("Fix dim expand");
 				return ExpandFixedDimensions(sizes);
 			} else if (sizes.Length > Shape.Length) {
-				return expandNewDimensions(sizes);
+                Debug.LogFormat("Expand dim expand fomr {0} to {1}", Shape.Length, sizes.Length);
+                return expandNewDimensions(sizes);
 			} else {
 			    throw new InvalidOperationException(String.Format("Number of sizes provided must be greater than or equal to the number of dimensions in tensor"));
 			}
@@ -753,6 +770,9 @@ namespace OpenMined.Syft.Tensor
             // TODO: make more complicated version which does not copy data
             result = HookGraph(ref result, "expand", inline:false, resultShape:shape);
             result.Add(this, inline: true,override_checks:true);
+
+//            if (result == null) { Debug.Log("Result is still null!!!"); }
+//            else { Debug.LogFormat("Result: {0}", result.Print()); };
 		    
             for (int i = 0; i < shape.Length; i++) {
                 if (sizes[i] != -1 && sizes[i] != shape[i]) {
@@ -764,11 +784,25 @@ namespace OpenMined.Syft.Tensor
                     }
                 }
             }
+/*
+            Debug.LogFormat("Expand output id {0} ", result.Id);
+            Debug.LogFormat("Strides:");
+            foreach (int i in result.strides)
+            { Debug.Log(i); };
+            Debug.LogFormat("shape:");
+            foreach (int i in result.shape)
+            { Debug.Log(i); };
+            Debug.LogFormat("data:");
+            foreach (float i in result.data)
+            { Debug.Log(i); };
+*/
+            Debug.LogFormat("Expand output {0} ", result.Print());
 
             return result;
         }
 
-        private FloatTensor expandNewDimensions(int[] sizes) {
+        private FloatTensor expandNewDimensions(int[] sizes)
+        {
             FloatTensor result = factory.Create(_data: data, _shape: shape, _shader: shader, _copyData: false);
 
             int diffLength = sizes.Length - shape.Length;

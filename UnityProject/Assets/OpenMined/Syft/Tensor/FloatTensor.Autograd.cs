@@ -28,81 +28,91 @@ namespace OpenMined.Syft.Tensor
 	    
 	    public void Backward(FloatTensor grad = null, FloatTensor grad_origin = null)
 	    {
-		    //Debug.Log("Backward:" + this.id + " creation_op:" + creation_op);
-		  
-		    if (autograd)
-		    {
-			    
-			    if (grad == null)
-			    {
-				    Debug.Log("Grad not Found... Creating Gradient of 1s");
-				    grad = this.createOnesTensorLike();
-				    grad.Autograd = false;
-			    }
+		    Debug.Log("Backward:" + this.id + " creation_op:" + creation_op);
 
-			    if (grad_origin != null)
-			    {
-				    int child_index = children_indices.IndexOf(grad_origin.Id);
-				    if (children_counts[child_index] > 0)
-				    {
-					    throw new InvalidOperationException("Can't backprop more than once.");
-				    }
-				    else
-				    {
-					    children_counts[child_index] += 1;
-				    }
-			    }
+//            Debug.Log("Autograd " + autograd);
+            if (autograd)
+            {
+                if (grad == null)
+                {
+                    Debug.Log("Grad not Found... Creating Gradient of 1s");
+                    grad = this.createOnesTensorLike();
+                    grad.Autograd = false;
+                }
 
-			    if (this.Grad == null)
-			    {
-				    this.Grad = grad;
-				    //Debug.Log("Setting Grad Tensor Id:" + this.id);
-			    }
-			    else
-			    {
-				    if (this.Grad.id == grad.id)
-				    {
-					    // do nothing
-					    //Debug.Log("Not Updating For Tensor Id:" + this.id);
-				    }
-				    else
-				    {
-					    //Debug.Log("Updating For Tensor Id:" + this.id);
-					    //this.Grad.Zero_();
-					    this.Grad.Add(grad, inline: true);
-				    }
+                if (grad_origin != null)
+                {
+                    int child_index = children_indices.IndexOf(grad_origin.Id);
+                    if (children_counts[child_index] > 0)
+                    {
+                        throw new InvalidOperationException("Can't backprop more than once.");
+                    }
+                    else
+                    {
+                        children_counts[child_index] += 1;
+                    }
+                }
 
-			    }
+                if (this.Grad == null)
+                {
+                    this.Grad = grad;
+                    //Debug.Log("Setting Grad Tensor Id:" + this.id);
+                }
+                else
+                {
+                    if (this.Grad.id == grad.id)
+                    {
+                        // do nothing
+                        //Debug.Log("Not Updating For Tensor Id:" + this.id);
+                    }
+                    else
+                    {
+                        //Debug.Log("Updating For Tensor Id:" + this.id);
+                        //this.Grad.Zero_();
+                        this.Grad.Add(grad, inline: true);
+                    }
 
-			    // grads must not have grads of their own
-			    if (this.Grad.autograd == true)
-			    {
-				    throw new InvalidOperationException("Sorry, grads cannot have grads");
-			    }
-			    
-				// RULES FOR AUTOGRAD:
-			    // 1) if you need to use "this" for calculating a gradient, copy it first and set autograd to false (see sigmoid)
-			    // 2) if you use a method in your backprop logic that doesn't hook into the dynamic graph yet, backprop
-			    // will not work!!! Make sure there's a "hookautograd" function in every method you use for backprop.
-			    // 3) whenever backpropping into a method where the forward prop involved a scalar (such as scalar
-			    // multiplication), current implementations assume you will NOT backprop into the scalar itself.
-			    // 4) Because of rule (2), do NOT use "emptyTensorCopy" at all in backprop unless you know what you're
-			    // doing. 
-			    // 5) I will be especially strict about Unit tests for all backprop logic as this is the most complex
-			    // piece of functionality we have. Furthermore, most errors go completely undetected (not discovered
-			    // by runtime errors). Autograd bugs just make convergence go slowly and sub-optimally.
-			    // 6) If you use a forward propagation tensor to backprop, you MUST remember to turn off autograd
-			    // when backpropagating (see "mm" below for example). Otherwise, it will cause autograd to break because
-			    // whatever child you select will think it needs to wait for another gradient before backpropagating.
-			    // 7) In the "view" backprop method, you'll notice that we set parent.grad = null. This keeps grads from
-			    // accumulating when forward and backprop is called multiple times. However, it doesn't cause any new 
-			    // memory allocation.
-			    
-			    // only continue backpropping if there's something to backprop into
-			    // only continue backpropping if all gradients (from children) are accounted for
-			    // override waiting for children if "backprop" was called on this variable directly
-			    if (this.creators != null && this.creators.Count > 0 && (grad_origin == null || AllAutogradChildrenAccountedFor()))
-			    {
+                }
+
+                // grads must not have grads of their own
+                if (this.Grad.autograd == true)
+                {
+                    throw new InvalidOperationException("Sorry, grads cannot have grads");
+                }
+
+                // RULES FOR AUTOGRAD:
+                // 1) if you need to use "this" for calculating a gradient, copy it first and set autograd to false (see sigmoid)
+                // 2) if you use a method in your backprop logic that doesn't hook into the dynamic graph yet, backprop
+                // will not work!!! Make sure there's a "hookautograd" function in every method you use for backprop.
+                // 3) whenever backpropping into a method where the forward prop involved a scalar (such as scalar
+                // multiplication), current implementations assume you will NOT backprop into the scalar itself.
+                // 4) Because of rule (2), do NOT use "emptyTensorCopy" at all in backprop unless you know what you're
+                // doing. 
+                // 5) I will be especially strict about Unit tests for all backprop logic as this is the most complex
+                // piece of functionality we have. Furthermore, most errors go completely undetected (not discovered
+                // by runtime errors). Autograd bugs just make convergence go slowly and sub-optimally.
+                // 6) If you use a forward propagation tensor to backprop, you MUST remember to turn off autograd
+                // when backpropagating (see "mm" below for example). Otherwise, it will cause autograd to break because
+                // whatever child you select will think it needs to wait for another gradient before backpropagating.
+                // 7) In the "view" backprop method, you'll notice that we set parent.grad = null. This keeps grads from
+                // accumulating when forward and backprop is called multiple times. However, it doesn't cause any new 
+                // memory allocation.
+
+                // only continue backpropping if there's something to backprop into
+                // only continue backpropping if all gradients (from children) are accounted for
+                // override waiting for children if "backprop" was called on this variable directly
+//                Debug.LogFormat("creators not null {0}", this.creators != null);
+                if (creators != null)
+                {
+                    Debug.LogFormat("Creators count: {0}, grad origin is null: {1}, all children accounted for: {2}", this.creators.Count, grad_origin == null, AllAutogradChildrenAccountedFor());
+                    foreach (int cr in creators)
+                    {
+                        Debug.LogFormat("Creator {0}", cr);
+                        Debug.LogFormat("Creator {0}: {1}", cr, factory.Get(cr).Print());
+                    };
+                }
+                if (this.creators != null && this.creators.Count > 0 && (grad_origin == null || AllAutogradChildrenAccountedFor()))
+                {
                     if (creation_op == "abs")
                     {
                         FloatTensor c = this.Copy(autograd:false);
@@ -135,22 +145,30 @@ namespace OpenMined.Syft.Tensor
                     }
                     else if (creation_op == "contiguous")
                     {
-	                    //Debug.Log("Contiguous Backpropping Grad:" + grad.Id);
-	                    //Debug.Log("Contiguous Storing Grad:" + this.Grad.Id);
+	                    Debug.Log("Contiguous Backpropping Grad:" + grad.Id);
+	                    Debug.Log("Contiguous Storing Grad:" + this.Grad.Id);
                         factory.Get(creators[0]).Backward(this.Grad.Copy(autograd:this.Grad.Autograd), this);
                     }
                     else if (creation_op == "conv2d")
                     {
+                        var intFact = factory.ctrl.intTensorFactory;
                         /*
                         Debug.LogFormat("Conv2d grad dims {0}", String.Join(",", grad.Shape));
                         Debug.LogFormat("Conv2d size creators {0}", creators.Count);
-                        Debug.LogFormat("Conv2d arg1 dims {0}", String.Join(",", creators[0].Shape));
-                        Debug.LogFormat("Conv2d arg2 dims {0}", String.Join(",", creators[1].Shape));
-                        Debug.LogFormat("Conv2d arg3 dims {0}", String.Join(",", creators[2].Shape));
-                        Debug.LogFormat("Conv2d arg4 dims {0}", String.Join(",", creators[3].Shape));
-                        Debug.LogFormat("Conv2d arg5 dims {0}", String.Join(",", creators[4].Shape));
-                        */
-                        var toInput = grad.Conv2d(factory.Get(creators[1]), factory.Get(creators[2]), factory.Get(creators[3]), factory.Get(creators[4]), factory.Get(creators[5]), factory.Get(creators[6]), true);
+                        Debug.LogFormat("Conv2d arg0 dims {0}", String.Join(",", factory.Get(creators[0]).Shape));
+                        Debug.LogFormat("Conv2d arg1 dims {0}", String.Join(",", factory.Get(creators[1]).Shape));
+                        Debug.LogFormat("Conv2d arg2 dims {0}", String.Join(",", factory.Get(creators[2]).Shape));
+                        Debug.LogFormat("Conv2d arg3 dims {0}", String.Join(",", intFact.Get(int_creators[3]).Shape));
+                        Debug.LogFormat("Conv2d arg4 dims {0}", String.Join(",", intFact.Get(int_creators[4]).Shape));
+                        Debug.LogFormat("Conv2d arg5 dims {0}", String.Join(",", intFact.Get(creators[5]).Shape));
+                        Debug.LogFormat("Conv2d arg6 dims {0}", String.Join(",", intFact.Get(creators[6]).Shape));
+*/
+                        FloatTensor bias=null;
+                        if (creators.Count == 3)
+                            bias = factory.Get(creators[2]);
+
+                        var toInput = grad.Conv2d(factory.Get(creators[1]),
+                            intFact.Get(int_creators[0]), intFact.Get(int_creators[1]), intFact.Get(int_creators[2]), intFact.Get(int_creators[3]), true,bias);
                         //Debug.LogFormat("Conv2d input dims {0}", String.Join(",", creators[0].Shape));
                         //Debug.LogFormat("Conv2d inputUpdate dims {0}", String.Join(",", toInput.Shape));
                         factory.Get(creators[0]).Backward(toInput, this);
@@ -164,8 +182,8 @@ namespace OpenMined.Syft.Tensor
                         FloatTensor c = factory.Get(creators[0]).Copy(false);
                         FloatTensor _group = factory.Create(new int[] { 1 }, new float[] { inS[0] * gradS[0] });
                         _group.autograd = false;
-                        var kernelUpdate = c.View(viewShape).Conv2d(grad.View(gradShape), factory.Get(creators[2]), factory.Get(creators[3]),
-                            factory.Get(creators[4]), factory.Get(creators[5]), _group);
+                        var kernelUpdate = c.View(viewShape).Conv2d(grad.View(gradShape), intFact.Get(int_creators[0]),
+                            intFact.Get(int_creators[1]), intFact.Get(int_creators[2]), intFact.Get(int_creators[3]),bias:bias);
                         //Debug.LogFormat("Conv2d kernel dims {0}", String.Join(",", creators[1].Shape));
                         //Debug.LogFormat("Conv2d kernelUpdate dims {0}", String.Join(",", kernelUpdate.Shape));
                         factory.Get(creators[1]).Backward(kernelUpdate.View(factory.Get(creators[1]).Shape), this);

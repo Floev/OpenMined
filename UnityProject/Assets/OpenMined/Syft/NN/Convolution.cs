@@ -13,10 +13,10 @@ namespace OpenMined.Syft.Layer
         //private int _in_dim;
         private int _out_dim;
         private int[] _kernel_dims;
-        private FloatTensor _stride_dims;
-        private FloatTensor _padding_dims;
-        private FloatTensor _dilation_dims;
-        private FloatTensor _group;
+        private IntTensor _stride_dims;
+        private IntTensor _padding_dims;
+        private IntTensor _dilation_dims;
+        private IntTensor _group;
         private bool _biased;
         private bool _transposed;
         //private readonly FloatTensor _kernel;
@@ -42,30 +42,26 @@ namespace OpenMined.Syft.Layer
             //_in_dim = input;
             _out_dim = output;
             _kernel_dims = kernel;
-            _stride_dims = controller.floatTensorFactory.Create(new int[] { 2 }, stride.Select(x => (float)x).ToArray());
-            _padding_dims = controller.floatTensorFactory.Create(new int[] { 2 }, padding.Select(x => (float)x).ToArray());
-            _dilation_dims = controller.floatTensorFactory.Create(new int[] { 2 }, dilation.Select(x => (float)x).ToArray());
-            _group = controller.floatTensorFactory.Create(new int[] { 1 }, new float[] { group });
+            _stride_dims = controller.intTensorFactory.Create(new int[] { 2 }, stride);
+            _padding_dims = controller.intTensorFactory.Create(new int[] { 2 }, padding);
+            _dilation_dims = controller.intTensorFactory.Create(new int[] { 2 }, dilation);//.Select(x => (float)x).ToArray());
+            _group = controller.intTensorFactory.Create(new int[] { 1 }, new int[] { group });
             _biased = bias;
             _transposed = transposed;
             int[] kernelShape = new int[] { output * group / input, kernel[0], kernel[1] };
             float[] _kernelData = kernelData;
             if (_kernelData == null) _kernelData = controller.RandomWeights(kernelShape.Aggregate(1, (a, b) => a * b));
 
-            _kernel = controller.floatTensorFactory.Create(_shape: kernelShape, _data: _kernelData, _autograd: true);
+            _kernel = controller.floatTensorFactory.Create(_shape: kernelShape, _data: _kernelData, _autograd: true,_keepgrads:true);
             parameters.Add(_kernel.Id);
 _biased = false;
             if (_biased)
             {
                 Debug.Log("Nooooooooo");
-                _bias = controller.floatTensorFactory.Create(_shape: new int[] { output }, _autograd: true);
-            }
-            else
-            {
-                _bias = controller.floatTensorFactory.Create(_shape: new int[] { output });
-                _bias.Zero_();
-            }
-            parameters.Add(_bias.Id);
+                _bias = controller.floatTensorFactory.Create(_shape: new int[] { output }, _autograd: true, _keepgrads: true);
+                parameters.Add(_bias.Id);
+            };
+
             parameters.Add(_stride_dims.Id);
             parameters.Add(_padding_dims.Id);
             parameters.Add(_dilation_dims.Id);
@@ -90,7 +86,7 @@ _biased = false;
             Debug.LogFormat("_group {0}:", _group.Print());
             Debug.LogFormat("_transposed {0}:", _transposed);
             */
-            return input.Conv2d(_kernel, _bias, _stride_dims, _padding_dims, _dilation_dims, _group,_transposed);
+            return input.Conv2d(_kernel, _stride_dims, _padding_dims, _dilation_dims, _group,_transposed, _bias);
         }
 
         public override int getParameterCount() { return _kernel.Size + _bias.Size; }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 namespace OpenMined.Syft.Tensor
 {
@@ -67,6 +68,7 @@ namespace OpenMined.Syft.Tensor
 		    						float[] resultData = null, 
 		    						IntTensor[] indices = null)
 	    {
+            Debug.LogFormat("Hook Graph for {0}", creation_op);
 		    // no dynamic graph for inline operations
 		    if (inline)
 			    return this;
@@ -77,7 +79,6 @@ namespace OpenMined.Syft.Tensor
 		    // from a previous operation - if not - we'll create our own.
 		    if (result == null)
 		    {
-
 			    bool child_pre_initialized = false;
 			    int child_index = 0;
 			    
@@ -85,7 +86,6 @@ namespace OpenMined.Syft.Tensor
 			    // as is currently being requested 
 				for (int i = 0; i < this.children_indices.Count; i++)
 				{
-
 					FloatTensor child = factory.Get(children_indices[i]);
 
 					if (child.creation_op == creation_op)
@@ -124,16 +124,22 @@ namespace OpenMined.Syft.Tensor
 				}
 
 			    if (child_pre_initialized)
-			    {	
+                {
 				    autograd_pre_initialized = true;
 				    result = factory.Get(child_index);
 				    result.Zero_();
 			    }
 			    else
 			    {
-				    bool resultAutograd = autograd;
-				    
-				    if(tensor_inputs != null)
+                    //                    Debug.LogFormat("autograd is now {0}", autograd);
+                    //                   foreach (FloatTensor tensor in tensor_inputs)
+                    //                      Debug.LogFormat("input autograd {0}",  tensor.autograd);
+
+                    //                Debug.LogFormat("autograd is now {0}", autograd);
+                    //                    bool resultAutograd = autograd && tensor_inputs.Select( x => x.autograd ).Any(x=>x);
+                    //                    Debug.LogFormat("resautograd is now {0}", resultAutograd);
+                    bool resultAutograd = autograd;
+                    if (tensor_inputs != null)
 					    foreach (FloatTensor tensor in tensor_inputs)
 						    resultAutograd = tensor.autograd && resultAutograd;
 
@@ -164,10 +170,9 @@ namespace OpenMined.Syft.Tensor
 				    
 				    if (this.dataOnGpu)
 					    result.Gpu(shader);
-				    
-
 			    }
 		    }
+
 		    if (autograd_pre_initialized)
 		    {
 			    
@@ -201,26 +206,31 @@ namespace OpenMined.Syft.Tensor
 						_keepgrads: keepgrads,
 						_creation_op: creation_op).id);
 					
-				// hook autograd - two parents
+				// hook autograd - tensor parents
 				if (tensor_inputs != null)
 					foreach (FloatTensor tensor in tensor_inputs)
 					{
+                        Debug.LogFormat("Hook tensor_input {0} size {1} vals:", tensor.Id, string.Join(",", tensor.Shape));
+                        Debug.Log(tensor.Print());
 						result.creators.Add(tensor.id);
 						tensor.children_indices.Add(result.Id);
 						tensor.children_counts.Add(0);
-						
-					}
+                    }
 				
 				// special storage for the graph so that we can know which indices of the parent to 
 				// backprop into. note that int_creators are expected to be non-differentiable and so we do
 				// not backprop into them directly
 				if (indices != null && indices.Length > 0)
 				{
-					if (result.int_creators.Count == 0)
-					{
-						foreach (IntTensor ind in indices)
-							result.int_creators.Add(ind.Id);
-					}
+                    if (result.int_creators.Count == 0)
+                    {
+                        foreach (IntTensor ind in indices)
+                        {
+                            Debug.LogFormat("Hook indices {0} size {1}", ind.Id, string.Join(",",ind.Shape));
+
+                            result.int_creators.Add(ind.Id);
+                        }
+                    }
 					else if (result.int_creators.Count == indices.Length)
 					{
 						// TODO: after dynamic graph works for IntTensor you should be able to simply check to see if
