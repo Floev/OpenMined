@@ -32,7 +32,7 @@ namespace OpenMined.Syft.Optim
             {
                 var param = ctrl.floatTensorFactory.Get(param_index);
                 var velInit = param.createZerosTensorLike();
-                this.velocities.Add(velInit.Id);
+                velocities.Add(velInit.Id);
             }
         }
 
@@ -48,9 +48,9 @@ namespace OpenMined.Syft.Optim
             }
 
             // Adjust learning rate with decay
-            if (this.decay > 0)
+            if (decay > 0)
             {
-                this.lr *= 1.0F / (1.0F + this.decay * iteration);
+                lr *= 1.0F / (1.0F + decay * iteration);
             }
         }
     }

@@ -1175,56 +1175,9 @@ namespace OpenMined.Syft.Tensor
             return "FloatTensor.processMessage: Command not found:" + msgObj.functionCall;
         }
 
-        public string Print()
+        override protected string ToString(float var)
         {
-            bool dataOriginallyOnGpu = dataOnGpu;
-            ComputeShader _shader = this.shader;
-
-            if (dataOnGpu)
-            {
-                Cpu();
-            }
-
-            string print = "";
-
-            int d1 = shape[shape.Length - 1];
-            int s1 = strides[shape.Length - 1];
-            int d2 = 1;
-            int s2 = d1;
-            if (shape.Length > 1)
-            {
-                d2 = shape[shape.Length - 2];
-                s2 = strides[shape.Length - 2];
-            }
-            int d3 = 1;
-            int s3 = d2 * s2;
-            if (shape.Length > 2)
-            {
-                d3 = shape[shape.Length - 3];
-                s3 = strides[shape.Length - 3];
-            };
-            if (shape.Length > 3)
-                print += "Only printing the last 3 dimesnions\n";
-
-            for (int k = 0; k < d3; k++)
-            {
-                for (int j = 0; j < d2; j++)
-                {
-                    for (int i = 0; i < d1; i++)
-                    {
-                        float f = this[i * s1 + j * s2 + k * s3];
-                        print += f.ToString("0.0000") + ", ";
-                    }
-                    print += "\n";
-                }
-                print += "\n";
-            }
-
-            if (dataOriginallyOnGpu)
-            {
-                Gpu(_shader);
-            }
-            return print;
+            return var.ToString("0.0000");
         }
     }
 }

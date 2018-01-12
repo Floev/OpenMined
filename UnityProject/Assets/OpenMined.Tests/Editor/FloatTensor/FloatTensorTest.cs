@@ -2,10 +2,10 @@ using System;
 using NUnit.Framework;
 using OpenMined.Network.Controllers;
 
-namespace OpenMined.Tests.Editor.FloatTensor
+namespace OpenMined.Test.Tensor.Float
 {
-    [Category("FloatTensorCPUTests")]
-    public class FloatTensorCPUTest
+    [Category("CPUTests")]
+    public class CPUTest
     {
         private SyftController ctrl;
 

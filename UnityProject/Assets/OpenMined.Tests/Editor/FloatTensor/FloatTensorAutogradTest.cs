@@ -4,10 +4,10 @@ using OpenMined.Network.Controllers;
 using System.Linq;
 using UnityEngine;
 
-namespace OpenMined.Tests.Editor.FloatTensor
+namespace OpenMined.Test.Tensor.Float
 {
-    [Category("FloatTensorAutogradTests")]
-    public class FloatTensorAutogradTest
+    [Category("AutogradTests")]
+    public class AutogradTest
     {
         private SyftController ctrl;
 

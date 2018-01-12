@@ -162,7 +162,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor AbsGPU(FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.AbsGPU dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.AbsGPU dataOnGpu: {0}</color>", dataOnGpu);
             if (dataOnGpu)
             {
                 shader.SetBuffer(AbsKernel, "AbsData", dataBuffer);
@@ -174,7 +174,7 @@ namespace OpenMined.Syft.Tensor
 
         public void AbsGPU_()
         {
-            Debug.LogFormat("<color=blue>FloatTensor.AbsGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.AbsGPU_ dataOnGpu: {0}</color>", dataOnGpu);
             if (dataOnGpu)
             {
                 shader.SetBuffer(AbsKernel_, "AbsData_", dataBuffer);
@@ -229,7 +229,7 @@ namespace OpenMined.Syft.Tensor
 
         public void AddScalarGPU_(float value)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.AddScalarGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.AddScalarGPU_ dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -244,7 +244,7 @@ namespace OpenMined.Syft.Tensor
 
         public void AddElemGPU_(FloatTensor tensor)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.AddElemGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.AddElemGPU_ dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -264,7 +264,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor AddScalarGPU(float value, FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.AddScalarGPU dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.AddScalarGPU dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -281,7 +281,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor AddElemGPU(FloatTensor tensor, FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.AddElemGPU dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.AddElemGPU dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -295,7 +295,7 @@ namespace OpenMined.Syft.Tensor
                 }
                 else
                 {
-                    Debug.LogFormat("addition with itself should be multiplication instead", dataOnGpu);
+//                    Debug.LogFormat("addition with itself should be multiplication instead", dataOnGpu);
                     return this.MulScalarGPU(2, result);
                 }
             }
@@ -341,7 +341,7 @@ namespace OpenMined.Syft.Tensor
 
         public void DivScalarGPU_(float value)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.DivScalarGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.DivScalarGPU_ dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -356,7 +356,7 @@ namespace OpenMined.Syft.Tensor
 
         public void DivElemGPU_(FloatTensor tensor)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.DivElemGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.DivElemGPU_ dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -368,7 +368,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor DivScalarGPU(float value, FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.DivScalarGPU dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.DivScalarGPU dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -385,7 +385,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor DivElemGPU(FloatTensor tensor, FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.DivElemGPU dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.DivElemGPU dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -408,7 +408,7 @@ namespace OpenMined.Syft.Tensor
 
         public void AddMatrixMultiplyGPU(FloatTensor tensor_1, FloatTensor tensor_2)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.add_matrix_multiply dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.add_matrix_multiply dataOnGpu: {0}</color>", dataOnGpu);
 
             // Tensor 1 (M x N), Tensor 2 (N x O), this (M x O)
             var bufferN = SendIntToGpu(AddMMKernel_, tensor_2.shape[0], "AddmmDimensionsN_");
@@ -444,7 +444,7 @@ namespace OpenMined.Syft.Tensor
 
         public void CeilGPU_()
         {
-            Debug.LogFormat("<color=blue>FloatTensor.ceil_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.ceil_ dataOnGpu: {0}</color>", dataOnGpu);
 
             shader.SetBuffer(CeilKernel_, "CeilData_", dataBuffer);
             shader.Dispatch(CeilKernel_, this.Size, 1, 1);
@@ -470,7 +470,7 @@ namespace OpenMined.Syft.Tensor
 
         public void FloorGPU_()
         {
-            Debug.LogFormat("<color=blue>FloatTensor.floor_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.floor_ dataOnGpu: {0}</color>", dataOnGpu);
 
             shader.SetBuffer(FloorKernel_, "FloorData_", dataBuffer);
             shader.Dispatch(FloorKernel_, this.Size, 1, 1);
@@ -478,7 +478,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor FloorGPU(FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.floor dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.floor dataOnGpu: {0}</color>", dataOnGpu);
 
             if (result.DataOnGpu)
             {
@@ -503,7 +503,7 @@ namespace OpenMined.Syft.Tensor
 
         public void RoundGPU_()
         {
-            Debug.LogFormat("<color=blue>FloatTensor.round_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.round_ dataOnGpu: {0}</color>", dataOnGpu);
 
             shader.SetBuffer(RoundKernel_, "RoundData_", dataBuffer);
             shader.Dispatch(RoundKernel_, this.Size, 1, 1);
@@ -511,7 +511,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor Log1pGPU()
         {
-            Debug.LogFormat("<color=blue>FloatTensor.log1p dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.log1p dataOnGpu: {0}</color>", dataOnGpu);
             if (!dataOnGpu) return this;
 
             var result = this.emptyTensorCopy();
@@ -524,7 +524,7 @@ namespace OpenMined.Syft.Tensor
 
         public void Log1pGPU_()
         {
-            Debug.LogFormat("<color=blue>FloatTensor.log1p_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.log1p_ dataOnGpu: {0}</color>", dataOnGpu);
 
             shader.SetBuffer(Log1pKernel_, "Log1pData_", dataBuffer);
             shader.Dispatch(Log1pKernel_, this.Size, 1, 1);
@@ -532,7 +532,7 @@ namespace OpenMined.Syft.Tensor
 
         public void MulScalarGPU_(float value)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.MulScalarGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.MulScalarGPU_ dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -547,7 +547,7 @@ namespace OpenMined.Syft.Tensor
 
         public void MulElemGPU_(FloatTensor tensor)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.MulElemGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.MulElemGPU_ dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -566,7 +566,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor MulScalarGPU(float value, FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.MulScalarGPU dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.MulScalarGPU dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -583,7 +583,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor MulElemGPU(FloatTensor tensor, FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.MulElemGPU dataOnGpu: {0}</color>", dataOnGpu);
+ //           Debug.LogFormat("<color=blue>FloatTensor.MulElemGPU dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -604,7 +604,7 @@ namespace OpenMined.Syft.Tensor
 
         public void PowScalarGPU_(float value)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.PowScalarGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.PowScalarGPU_ dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -619,7 +619,7 @@ namespace OpenMined.Syft.Tensor
 
         public void PowElemGPU_(FloatTensor tensor)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.PowElemGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+ //           Debug.LogFormat("<color=blue>FloatTensor.PowElemGPU_ dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -631,7 +631,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor PowScalarGPU(float value, FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.PowScalarGPU dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.PowScalarGPU dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -677,7 +677,7 @@ namespace OpenMined.Syft.Tensor
 
         public void NegateGPU_()
         {
-            Debug.LogFormat("<color=blue>FloatTensor.NegateGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//
             if (dataOnGpu)
             {
                 shader.SetBuffer(NegateKernel_, "NegateData_", dataBuffer);
@@ -725,7 +725,7 @@ namespace OpenMined.Syft.Tensor
 
         public void RemainderElemGPU_(FloatTensor divisor)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.RemainderElemGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+ //           Debug.LogFormat("<color=blue>FloatTensor.RemainderElemGPU_ dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -744,7 +744,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor RemainderElemGPU(FloatTensor divisor, FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.RemainderElemGPU dataOnGpu: {0}</color>", dataOnGpu);
+ //           Debug.LogFormat("<color=blue>FloatTensor.RemainderElemGPU dataOnGpu: {0}</color>", dataOnGpu);
             if (dataOnGpu)
             {
                 if (this.Id != divisor.Id)
@@ -764,7 +764,7 @@ namespace OpenMined.Syft.Tensor
 
         public void RemainderScalarGPU_(float divisor)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.RemainderScalarGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.RemainderScalarGPU_ dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -779,7 +779,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor RemainderScalarGPU(FloatTensor result, float value)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.RemainderScalarGPU dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.RemainderScalarGPU dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -845,14 +845,14 @@ namespace OpenMined.Syft.Tensor
 
         public void SigmoidGPU_()
         {
-            Debug.LogFormat("<color=blue>FloatTensor.SigmoidGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.SigmoidGPU_ dataOnGpu: {0}</color>", dataOnGpu);
             shader.SetBuffer(SigmoidKernel_, "SigmoidData_", dataBuffer);
             shader.Dispatch(SigmoidKernel_, this.size, 1, 1);
         }
 
         public FloatTensor SigmoidGPU(FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.SigmoidGPU dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.SigmoidGPU dataOnGpu: {0}</color>", dataOnGpu);
             shader.SetBuffer(SigmoidKernel, "SigmoidData", this.dataBuffer);
             shader.SetBuffer(SigmoidKernel, "SigmoidResult", result.dataBuffer);
             shader.Dispatch(SigmoidKernel, this.size, 1, 1);
@@ -861,7 +861,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor SignGPU(FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.SignGPU dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.SignGPU dataOnGpu: {0}</color>", dataOnGpu);
             if (dataOnGpu)
             {
                 shader.SetBuffer(SignKernel, "SignData", dataBuffer);
@@ -873,7 +873,7 @@ namespace OpenMined.Syft.Tensor
 
         public void SignGPU_()
         {
-            Debug.LogFormat("<color=blue>FloatTensor.SignGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.SignGPU_ dataOnGpu: {0}</color>", dataOnGpu);
             if (dataOnGpu)
             {
                 shader.SetBuffer(SignKernel_, "SignData_", dataBuffer);
@@ -899,7 +899,7 @@ namespace OpenMined.Syft.Tensor
 
         public void SubScalarGPU_(float value)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.SubScalarGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.SubScalarGPU_ dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -914,7 +914,7 @@ namespace OpenMined.Syft.Tensor
 
         public void SubElemGPU_(FloatTensor tensor)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.SubElemGPU_ dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.SubElemGPU_ dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -934,7 +934,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor SubScalarGPU(float value, FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.SubScalarGPU dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.SubScalarGPU dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -951,7 +951,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor SubElemGPU(FloatTensor tensor, FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.SubElemGPU dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.SubElemGPU dataOnGpu: {0}</color>", dataOnGpu);
 
             if (dataOnGpu)
             {
@@ -1025,7 +1025,7 @@ namespace OpenMined.Syft.Tensor
             // 3. copy to cpu and sum over groups -> trace
             float[] resultPerGroup = new float[numgroups];
             resultPerGroupBuffer.GetData(resultPerGroup);
-            UnityEngine.Debug.Log(resultPerGroup[0]);
+//            Debug.Log(resultPerGroup[0]);
 
             float sum = 0;
             foreach (var item in resultPerGroup)

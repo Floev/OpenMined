@@ -50,15 +50,9 @@ namespace OpenMined.Syft.Layer
 		{
 			
 			FloatTensor output = input.MM(_weights);
-            Debug.LogFormat("Running forward fn with biased set to: {0}", _biased);
             if (_biased)
             {
-                Debug.Log("Run expand");
-                var y = _bias.Expand(output.Shape);
-                Debug.Log("Run conti");
-                var z = y.Contiguous();
-                Debug.Log("done conti");
-                output = output.Add(z);
+                output = output.Add(_bias.Expand(output.Shape).Contiguous());
             };
 			
 			activation = output.Id;

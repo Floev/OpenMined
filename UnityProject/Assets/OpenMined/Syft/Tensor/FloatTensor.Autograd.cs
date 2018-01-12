@@ -28,7 +28,7 @@ namespace OpenMined.Syft.Tensor
 	    
 	    public void Backward(FloatTensor grad = null, FloatTensor grad_origin = null)
 	    {
-		    Debug.Log("Backward:" + this.id + " creation_op:" + creation_op);
+//            Debug.Log("Backward:" + this.id + " creation_op:" + creation_op);
 
 //            Debug.Log("Autograd " + autograd);
             if (autograd)
@@ -101,7 +101,8 @@ namespace OpenMined.Syft.Tensor
                 // only continue backpropping if there's something to backprop into
                 // only continue backpropping if all gradients (from children) are accounted for
                 // override waiting for children if "backprop" was called on this variable directly
-//                Debug.LogFormat("creators not null {0}", this.creators != null);
+                /*
+                Debug.LogFormat("creators not null {0}", this.creators != null);
                 if (creators != null)
                 {
                     Debug.LogFormat("Creators count: {0}, grad origin is null: {1}, all children accounted for: {2}", this.creators.Count, grad_origin == null, AllAutogradChildrenAccountedFor());
@@ -111,6 +112,7 @@ namespace OpenMined.Syft.Tensor
                         Debug.LogFormat("Creator {0}: {1}", cr, factory.Get(cr).Print());
                     };
                 }
+                */
                 if (this.creators != null && this.creators.Count > 0 && (grad_origin == null || AllAutogradChildrenAccountedFor()))
                 {
                     if (creation_op == "abs")
@@ -145,8 +147,8 @@ namespace OpenMined.Syft.Tensor
                     }
                     else if (creation_op == "contiguous")
                     {
-	                    Debug.Log("Contiguous Backpropping Grad:" + grad.Id);
-	                    Debug.Log("Contiguous Storing Grad:" + this.Grad.Id);
+//	                    Debug.Log("Contiguous Backpropping Grad:" + grad.Id);
+//	                    Debug.Log("Contiguous Storing Grad:" + this.Grad.Id);
                         factory.Get(creators[0]).Backward(this.Grad.Copy(autograd:this.Grad.Autograd), this);
                     }
                     else if (creation_op == "conv2d")
@@ -482,7 +484,7 @@ namespace OpenMined.Syft.Tensor
 
             if (dim == 0)
             {
-                var st = stride[dim];
+//                var st = stride[dim];
                 var sh = inputShape[dim];
 
                 for (var i = 0; i < sh; i++)

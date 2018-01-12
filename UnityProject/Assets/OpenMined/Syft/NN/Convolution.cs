@@ -11,8 +11,8 @@ namespace OpenMined.Syft.Layer
     public class Conv2d : Layer
     {
         //private int _in_dim;
-        private int _out_dim;
-        private int[] _kernel_dims;
+//        private int _out_dim;
+//        private int[] _kernel_dims;
         private IntTensor _stride_dims;
         private IntTensor _padding_dims;
         private IntTensor _dilation_dims;
@@ -40,8 +40,8 @@ namespace OpenMined.Syft.Layer
             this.controller = _controller;
 
             //_in_dim = input;
-            _out_dim = output;
-            _kernel_dims = kernel;
+//            _out_dim = output;
+//            _kernel_dims = kernel;
             _stride_dims = controller.intTensorFactory.Create(new int[] { 2 }, stride);
             _padding_dims = controller.intTensorFactory.Create(new int[] { 2 }, padding);
             _dilation_dims = controller.intTensorFactory.Create(new int[] { 2 }, dilation);//.Select(x => (float)x).ToArray());
@@ -78,8 +78,12 @@ _biased = false;
             Debug.LogFormat("Forwarding {0}:", string.Join(",", input.Shape));
             Debug.LogFormat("_kernel shape {0}:", string.Join(",",_kernel.Shape));
             Debug.LogFormat("_kernel {0}:", _kernel.Print());
-            Debug.LogFormat("_bias shape {0}:", string.Join(",", _bias.Shape));
-            Debug.LogFormat("_bias {0}:", _bias.Print());
+            Debug.LogFormat("nb params {0}:", parameters.Count);
+            if (_biased)
+            {
+                Debug.LogFormat("_bias shape {0}:", string.Join(",", _bias.Shape));
+                Debug.LogFormat("_bias {0}:", _bias.Print());
+            }
             Debug.LogFormat("_stride_dims {0}:", _stride_dims.Print());
             Debug.LogFormat("_padding_dims {0}:", _padding_dims.Print());
             Debug.LogFormat("_dilation_dims {0}:", _dilation_dims.Print());

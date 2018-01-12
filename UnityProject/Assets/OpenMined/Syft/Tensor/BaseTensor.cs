@@ -249,5 +249,59 @@ namespace OpenMined.Syft.Tensor
             // Sixth: let's check to see that our shape and data sizes match.
             size = acc;
         }
+
+        protected abstract string ToString( T var );
+
+        public string Print()
+        {
+            bool dataOriginallyOnGpu = dataOnGpu;
+            ComputeShader _shader = this.shader;
+
+            if (dataOnGpu)
+            {
+                Cpu();
+            }
+
+            string print = "";
+
+            int d1 = shape[shape.Length - 1];
+            int s1 = strides[shape.Length - 1];
+            int d2 = 1;
+            int s2 = d1;
+            if (shape.Length > 1)
+            {
+                d2 = shape[shape.Length - 2];
+                s2 = strides[shape.Length - 2];
+            }
+            int d3 = 1;
+            int s3 = d2 * s2;
+            if (shape.Length > 2)
+            {
+                d3 = shape[shape.Length - 3];
+                s3 = strides[shape.Length - 3];
+            };
+            if (shape.Length > 3)
+                print += "Only printing the last 3 dimesnions\n";
+
+            for (int k = 0; k < d3; k++)
+            {
+                for (int j = 0; j < d2; j++)
+                {
+                    for (int i = 0; i < d1; i++)
+                    {
+                        var f = this[i * s1 + j * s2 + k * s3];
+                        print += ToString(f) + ", ";
+                    }
+                    print += "\n";
+                }
+                print += "\n";
+            }
+
+            if (dataOriginallyOnGpu)
+            {
+                Gpu(_shader);
+            }
+            return print;
+        }
     }
 }

@@ -12,7 +12,7 @@ namespace OpenMined.Syft.Tensor
         private List<int> children_indices; // children -> counts
 	    private List<int> children_counts; // children -> counts
 
-	    private List<int> children_int_indices; // when integer indices are used as a child
+//	    private List<int> children_int_indices; // when integer indices are used as a child
 	    private List<int> int_creators; // when integer indices are used to create this tensor
 
         public void InitAutograd()
@@ -30,7 +30,7 @@ namespace OpenMined.Syft.Tensor
 		    children_indices = new List<int>();
 		    children_counts = new List<int>();
 
-		    children_int_indices = new List<int>();
+//		    children_int_indices = new List<int>();
 		    int_creators = new List<int>();
 	    }
 /*
@@ -68,7 +68,7 @@ namespace OpenMined.Syft.Tensor
 		    						float[] resultData = null, 
 		    						IntTensor[] indices = null)
 	    {
-            Debug.LogFormat("Hook Graph for {0}", creation_op);
+//            Debug.LogFormat("Hook Graph for {0}", creation_op);
 		    // no dynamic graph for inline operations
 		    if (inline)
 			    return this;
@@ -210,8 +210,8 @@ namespace OpenMined.Syft.Tensor
 				if (tensor_inputs != null)
 					foreach (FloatTensor tensor in tensor_inputs)
 					{
-                        Debug.LogFormat("Hook tensor_input {0} size {1} vals:", tensor.Id, string.Join(",", tensor.Shape));
-                        Debug.Log(tensor.Print());
+//                        Debug.LogFormat("Hook tensor_input {0} size {1} vals:", tensor.Id, string.Join(",", tensor.Shape));
+//                        Debug.Log(tensor.Print());
 						result.creators.Add(tensor.id);
 						tensor.children_indices.Add(result.Id);
 						tensor.children_counts.Add(0);
@@ -226,7 +226,7 @@ namespace OpenMined.Syft.Tensor
                     {
                         foreach (IntTensor ind in indices)
                         {
-                            Debug.LogFormat("Hook indices {0} size {1}", ind.Id, string.Join(",",ind.Shape));
+//                            Debug.LogFormat("Hook indices {0} size {1}", ind.Id, string.Join(",",ind.Shape));
 
                             result.int_creators.Add(ind.Id);
                         }

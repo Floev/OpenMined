@@ -754,10 +754,8 @@ namespace OpenMined.Syft.Tensor
         
         public FloatTensor Expand(int[] sizes) {
 			if (sizes.Length == Shape.Length) {
-                Debug.Log("Fix dim expand");
 				return ExpandFixedDimensions(sizes);
 			} else if (sizes.Length > Shape.Length) {
-                Debug.LogFormat("Expand dim expand fomr {0} to {1}", Shape.Length, sizes.Length);
                 return expandNewDimensions(sizes);
 			} else {
 			    throw new InvalidOperationException(String.Format("Number of sizes provided must be greater than or equal to the number of dimensions in tensor"));
@@ -784,19 +782,6 @@ namespace OpenMined.Syft.Tensor
                     }
                 }
             }
-
-            Debug.LogFormat("Expand output id {0} ", result.Id);
-            Debug.LogFormat("Strides:");
-            foreach (int i in result.strides)
-            { Debug.Log(i); };
-            Debug.LogFormat("shape:");
-            foreach (int i in result.shape)
-            { Debug.Log(i); };
-            Debug.LogFormat("data:");
-            foreach (float i in result.data)
-            { Debug.Log(i); };
-
-            Debug.LogFormat("Expand output {0} ", result.Print());
 
             return result;
         }
@@ -1059,7 +1044,6 @@ namespace OpenMined.Syft.Tensor
                 result.data[i] = this.Data[i * flat_left[1] + indices.Data[i]];
             }*/
             
-            int j = 0;
             for (int i = 0; i < indices.Size; i++)
             {
                 result.Data[i * flat_left[1] + indices.Data[i]] += x.Data[i];

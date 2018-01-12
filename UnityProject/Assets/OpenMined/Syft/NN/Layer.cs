@@ -16,7 +16,7 @@ namespace OpenMined.Syft.Layer
         private FloatTensor cached_ones_grad_for_backprop;
         private Loss.Loss _criterion;
         private Optimizer _optimizer;
-        private int _batch_size;
+//        private int _batch_size;
         private int _input_batch_offset;
         private int _target_batch_offset;
 
@@ -69,7 +69,7 @@ namespace OpenMined.Syft.Layer
             
             last_target_buffer = controller.floatTensorFactory.Create(_shape: target_buffer_shape, _autograd:true);
             
-            this._batch_size = batch_size;
+//            this._batch_size = batch_size;
             this._criterion = criterion;
             this._optimizer = optimizer;
 

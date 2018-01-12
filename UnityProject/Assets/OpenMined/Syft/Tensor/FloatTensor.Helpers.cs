@@ -29,14 +29,14 @@ namespace OpenMined.Syft.Tensor
             if (tensor.Size != size)
             {
                 throw new InvalidOperationException(String.Format(
-                    "Tensors cannot be added since they have different sizes: {0} != {1}", tensor.Size, size));
+                    "Operation failed due to different sizes: {0} != {1}", Size, tensor.Size));
             }
             
             // Check if both tensors have same number of dimensions
             if (tensor.Shape.Length != shape.Length)
             {
                 throw new InvalidOperationException(String.Format(
-                    "Tensors cannot be added since they have different number of dimensions: {0} != {1}", tensor.Shape.Length, shape.Length));
+                    "Operation failed due to different number of dimensions: {0} != {1}", Shape.Length,tensor.Shape.Length));
             }
 
             if (dataOnGpu != tensor.dataOnGpu)
@@ -48,11 +48,11 @@ namespace OpenMined.Syft.Tensor
             // Check if both tensors have same shapes
             for (var i = 0; i < shape.Length; i++)
             {
-                if (shape[i] != tensor.Shape[i])
+                if (Shape[i] != tensor.Shape[i])
                 {
                     throw new InvalidOperationException(String.Format(
-                        "Tensors cannot be added since they have different shapes: ({0}) and ({1})",
-                        String.Join(",", shape), String.Join(",", tensor.Shape)));
+                        "Operation failed due to different shapes: ({0}) and ({1})",
+                        String.Join(",", Shape), String.Join(",", tensor.Shape)));
                 }
             }
             return false;

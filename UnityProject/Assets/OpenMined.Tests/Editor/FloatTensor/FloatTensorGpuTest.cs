@@ -1,16 +1,14 @@
 using System;
 using UnityEngine;
-using UnityEditor;
 using NUnit.Framework;
 using OpenMined.Network.Controllers;
-using OpenMined.Syft.Tensor;
 using OpenMined.Network.Servers;
-using UnityEditor.VersionControl;
+using OpenMined.Syft.Tensor;
 
-namespace OpenMined.Tests
+namespace OpenMined.Test.Tensor.Float
 {
-    [Category("FloatTensorGPUTests")]
-    public class FloatTensorGPUTest
+    [Category("GPUTests")]
+    public class GPUTest
     {
         public SyftController ctrl;
         public ComputeShader shader;

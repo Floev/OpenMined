@@ -267,5 +267,9 @@ namespace OpenMined.Syft.Tensor
             return "IntTensor.processMessage: Command not found:" + msgObj.functionCall;
         }
 
+        override protected string ToString(int var)
+        {
+            return var.ToString();
+        }
     }
 }
