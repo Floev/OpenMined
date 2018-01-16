@@ -1,30 +1,22 @@
-﻿using JetBrains.Annotations;
-using OpenMined.Network.Controllers;
-using OpenMined.Network.Utils;
+﻿using OpenMined.Network.Controllers;
 using OpenMined.Syft.Tensor;
-using UnityEngine;
 
 namespace OpenMined.Syft.Layer
 {
 	public class Linear: Layer
 	{
-//		private int _input;
-//		private int _output;
-
 		private readonly FloatTensor _weights;
 		private FloatTensor _bias;
         private bool _biased;
-		
-		public Linear (SyftController _controller, int input, int output, string initializer="Xavier",bool biased=false,float[]weights=null,float[]bias=null)
+
+        public Linear(SyftController _controller, int input, int output, string initializer = "Xavier", 
+            bool biased = false, float[] weights = null, float[] bias = null)
 		{
 			init("linear");
 
 			controller = _controller;
             _biased = biased || bias!=null;
-			
-//			_input = input;
-//			_output = output;
-			
+						
 			int[] weightShape = { input, output };
             if (weights == null)
             {

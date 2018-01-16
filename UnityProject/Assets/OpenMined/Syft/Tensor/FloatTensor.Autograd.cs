@@ -165,12 +165,12 @@ namespace OpenMined.Syft.Tensor
                         Debug.LogFormat("Conv2d arg5 dims {0}", String.Join(",", intFact.Get(creators[5]).Shape));
                         Debug.LogFormat("Conv2d arg6 dims {0}", String.Join(",", intFact.Get(creators[6]).Shape));
 */
-                        FloatTensor bias=null;
-                        if (creators.Count == 3)
-                            bias = factory.Get(creators[2]);
+//                        FloatTensor bias=null;
+//                        if (creators.Count == 3)
+ //                           bias = factory.Get(creators[2]);
 
                         var toInput = grad.Conv2d(factory.Get(creators[1]),
-                            intFact.Get(int_creators[0]), intFact.Get(int_creators[1]), intFact.Get(int_creators[2]), intFact.Get(int_creators[3]), true,bias);
+                            intFact.Get(int_creators[0]), intFact.Get(int_creators[1]), intFact.Get(int_creators[2]), intFact.Get(int_creators[3]), true);
                         //Debug.LogFormat("Conv2d input dims {0}", String.Join(",", creators[0].Shape));
                         //Debug.LogFormat("Conv2d inputUpdate dims {0}", String.Join(",", toInput.Shape));
                         factory.Get(creators[0]).Backward(toInput, this);
@@ -185,14 +185,10 @@ namespace OpenMined.Syft.Tensor
                         FloatTensor _group = factory.Create(new int[] { 1 }, new float[] { inS[0] * gradS[0] });
                         _group.autograd = false;
                         var kernelUpdate = c.View(viewShape).Conv2d(grad.View(gradShape), intFact.Get(int_creators[0]),
-                            intFact.Get(int_creators[1]), intFact.Get(int_creators[2]), intFact.Get(int_creators[3]),bias:bias);
+                            intFact.Get(int_creators[1]), intFact.Get(int_creators[2]), intFact.Get(int_creators[3]));
                         //Debug.LogFormat("Conv2d kernel dims {0}", String.Join(",", creators[1].Shape));
                         //Debug.LogFormat("Conv2d kernelUpdate dims {0}", String.Join(",", kernelUpdate.Shape));
                         factory.Get(creators[1]).Backward(kernelUpdate.View(factory.Get(creators[1]).Shape), this);
-                        /*
-                        creators[0].Backward(grad.MM(creators[1].Transpose()), this);
-                        creators[1].Backward(creators[0].Transpose().MM(grad), this);
-                        */
                     }
                     else if (creation_op == "copy")
                     {

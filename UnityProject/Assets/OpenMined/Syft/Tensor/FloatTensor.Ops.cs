@@ -157,10 +157,8 @@ namespace OpenMined.Syft.Tensor
                 }
             });
 
-
 			return result;
 		}
-
         
         public FloatTensor Add(float value, bool inline = false, FloatTensor result = null)
         {
@@ -365,18 +363,25 @@ namespace OpenMined.Syft.Tensor
             return result;
         }
 
-        //        public FloatTensor Conv2d(FloatTensor kernel, FloatTensor bias, int[] stride, int[] padding, int[] dilation, int group, bool transposed = false)
-        public FloatTensor Conv2d(FloatTensor kernel, IntTensor stride, IntTensor padding, IntTensor dilation, IntTensor group, bool transposed = false, FloatTensor bias = null)
+        public FloatTensor Conv2d(FloatTensor kernel, IntTensor stride, IntTensor padding, IntTensor dilation, IntTensor group, 
+            bool transposed = false)
         {
-            //            if (this._shape1[1] != shape2[0])
-            //              throw new InvalidOperationException(String.Format("Matrix multiply not possible: {0} & {1}.", shape1[1], shape2[0]));
+            if( group.Size != 1)
+                new InvalidOperationException("Invalid group size");
+            if (group[0] != 1 || dilation[0] != 1 || dilation[1] != 1)
+                new InvalidOperationException("Group and dilation not yet implemented");
 
+            if (!IsContiguous())
+                throw new InvalidOperationException("Input must be contiguous, call Contiguous() to convert");
 
-            //            var result = inline ? this : this.emptyTensorCopy();
+            if (kernel.shape.Length != 3)
+                throw new InvalidOperationException("Kernel should be size 3");
+
+            if( shape.Length != 4)
+                throw new InvalidOperationException("Conv2d input should be 4d (batch,feature,dim1,dim2)");
+
             //in simplest case:
-            //Shape = [i,j,k,l] and kernel = [o,m,n] -> output [i,r,p,q] where p = k+1-m, q=l+1-n, r = j*o
-
-            //            Debug.LogFormat("Conv2d inputs: {0},{1},{2},{3},{4},{5},{6},{7}",this.Print(), kernel.Print(), bias.Print(), stride.Print(), padding.Print(), dilation.Print(), group.Print(), transposed);
+            //Shape (batch/features/dim1/dim2) = [i,j,k,l] and kernel = [o,m,n] -> output [i,r,p,q] where p = k+1-m, q=l+1-n, r = j*o
 
             int[] outShape = new int[4];
             if (transposed)
@@ -389,31 +394,17 @@ namespace OpenMined.Syft.Tensor
             }
             else
             {
-                //                Debug.LogFormat("Shape {0}, kerShap {1}", String.Join(",", Shape), String.Join(",", kernel.Shape));
                 outShape = new int[] { Shape[0],//samples
                     kernel.Shape[0] * Shape[1] / (int) group[0] ,//feautres
                     Shape[2] - ( kernel.Shape[1] - 1 ),//conv dim1
                     Shape[3] - ( kernel.Shape[2] - 1 ),//conv dim2
                 };
             };
-            /*var result = factory.Create(outShape,
-                //_shader: this.shader);
-                       _dataOnGpu: dataOnGpu,
-                       _autograd: autograd,
-                       _keepgrads: keepgrads//,
-                       //_creation_op: creation_op
-                       );
-            */
+
             FloatTensor result = null;
-            FloatTensor[] tensor_inputs = null;
-            if (bias != null)
-            {
-                tensor_inputs = new FloatTensor[] { kernel, bias };
-            }
-            else { tensor_inputs = new FloatTensor[] { kernel }; };
 
             result = HookGraph(result: ref result,
-                    tensor_inputs: tensor_inputs,
+                    tensor_inputs: new FloatTensor[] { kernel },
                     indices: new IntTensor[] { stride, padding, dilation, group },
                     creation_op: "conv2d",
                     inline: false,
@@ -421,11 +412,10 @@ namespace OpenMined.Syft.Tensor
 
             if (dataOnGpu)
             {
-                throw new InvalidOperationException(
-                    "Go implement!");
+                throw new InvalidOperationException("Conv2D not implement GPU!");
             }
 
-            //Shape = [i,j,k,l] and kernel = [o,m,n] -> output [i,r,p,q] where p = k+1-m, q=l+1-n, r = j*o
+            //Shape (batch/features/dim1/dim2) = [i,j,k,l] and kernel = [o,m,n] -> output [i,r,p,q] where p = k+1-m, q=l+1-n, r = j*o
             int k;
             int l;
             int r;

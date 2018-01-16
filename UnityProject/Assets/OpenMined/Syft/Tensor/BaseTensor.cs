@@ -282,13 +282,20 @@ namespace OpenMined.Syft.Tensor
             };
             if (shape.Length > 3)
                 print += "Only printing the last 3 dimesnions\n";
-
+/*
+            Debug.LogFormat("Size data: {0}",data.Length);
+            Debug.Log(string.Join(",", data));
+            Debug.LogFormat("Shape: {0}", string.Join(",", shape));
+            Debug.LogFormat("Strides: {0}", string.Join(",", strides));
+*/
             for (int k = 0; k < d3; k++)
             {
                 for (int j = 0; j < d2; j++)
                 {
                     for (int i = 0; i < d1; i++)
                     {
+//                        Debug.LogFormat("i {0}, j {1}, k{2}", i, j, k);
+//                        Debug.LogFormat("si {0}, sj {1}, sk{2}", s1, s2, s3);
                         var f = this[i * s1 + j * s2 + k * s3];
                         print += ToString(f) + ", ";
                     }

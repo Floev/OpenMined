@@ -1,31 +1,25 @@
-﻿using JetBrains.Annotations;
-using OpenMined.Network.Controllers;
-using OpenMined.Network.Utils;
+﻿using OpenMined.Network.Controllers;
 using OpenMined.Syft.Tensor;
-//using OpenMined.Syft.NN;
 using UnityEngine;
 using System.Linq;
+using System;
 
 namespace OpenMined.Syft.Layer
 {
     public class Conv2d : Layer
     {
-        //private int _in_dim;
-//        private int _out_dim;
-//        private int[] _kernel_dims;
+        private FloatTensor _kernel;
+        private FloatTensor _bias;
         private IntTensor _stride_dims;
         private IntTensor _padding_dims;
         private IntTensor _dilation_dims;
         private IntTensor _group;
         private bool _biased;
         private bool _transposed;
-        //private readonly FloatTensor _kernel;
-        private FloatTensor _kernel;
-        private FloatTensor _bias;
 
         public Conv2d(SyftController _controller, int input, int output, int[] kernel,
-            int[] stride = null, int[] padding = null, int[] dilation = null, int group = 1, bool bias = false, bool transposed = false,
-            float[] kernelData = null)
+            int[] stride = null, int[] padding = null, int[] dilation = null, int group = 1, bool biased = false, bool transposed = false,
+            float[] kernelData = null, float[] biasData = null, string initializer = "Xavier")
         {
             init("conv2d");
             if (stride == null)
@@ -39,26 +33,33 @@ namespace OpenMined.Syft.Layer
 
             this.controller = _controller;
 
-            //_in_dim = input;
-//            _out_dim = output;
-//            _kernel_dims = kernel;
             _stride_dims = controller.intTensorFactory.Create(new int[] { 2 }, stride);
             _padding_dims = controller.intTensorFactory.Create(new int[] { 2 }, padding);
-            _dilation_dims = controller.intTensorFactory.Create(new int[] { 2 }, dilation);//.Select(x => (float)x).ToArray());
+            _dilation_dims = controller.intTensorFactory.Create(new int[] { 2 }, dilation);
             _group = controller.intTensorFactory.Create(new int[] { 1 }, new int[] { group });
-            _biased = bias;
+            _biased = biased || biasData != null;
+            if (_biased)
+            {
+                throw new NotImplementedException("Conv with bias requires enhancement of ExpandNewDimension");
+            };
             _transposed = transposed;
             int[] kernelShape = new int[] { output * group / input, kernel[0], kernel[1] };
             float[] _kernelData = kernelData;
-            if (_kernelData == null) _kernelData = controller.RandomWeights(kernelShape.Aggregate(1, (a, b) => a * b));
+            if (_kernelData == null)
+            {
+                int initi = 0;
+                if (initializer == "Xavier")
+                    initi = input * kernelShape[0] * kernelShape[1];
+                _kernelData = controller.RandomWeights(kernelShape.Aggregate(1, (a, b) => a * b), initi);
+            };
 
             _kernel = controller.floatTensorFactory.Create(_shape: kernelShape, _data: _kernelData, _autograd: true,_keepgrads:true);
             parameters.Add(_kernel.Id);
-_biased = false;
+
             if (_biased)
             {
-                Debug.Log("Nooooooooo");
-                _bias = controller.floatTensorFactory.Create(_shape: new int[] { output }, _autograd: true, _keepgrads: true);
+                _bias = controller.floatTensorFactory.Create(_data: biasData, _shape: new int[] { 1, output }, _autograd: true);
+                //before shape was { output }
                 parameters.Add(_bias.Id);
             };
 
@@ -74,25 +75,22 @@ _biased = false;
 
         public override FloatTensor Forward( FloatTensor input)
         {
-            /*
-            Debug.LogFormat("Forwarding {0}:", string.Join(",", input.Shape));
-            Debug.LogFormat("_kernel shape {0}:", string.Join(",",_kernel.Shape));
-            Debug.LogFormat("_kernel {0}:", _kernel.Print());
-            Debug.LogFormat("nb params {0}:", parameters.Count);
+//            Debug.LogFormat("Apply conv2d to {0}", input.Print());
+//            Debug.LogFormat("using {0}, {1}, {2}, {3}, {4}, {5}", _kernel.Print(), _stride_dims.Print(), _padding_dims.Print(), _dilation_dims.Print(), _group.Print(), _transposed);
+            var output = input.Conv2d(_kernel, _stride_dims, _padding_dims, _dilation_dims, _group, _transposed);
             if (_biased)
             {
-                Debug.LogFormat("_bias shape {0}:", string.Join(",", _bias.Shape));
-                Debug.LogFormat("_bias {0}:", _bias.Print());
-            }
-            Debug.LogFormat("_stride_dims {0}:", _stride_dims.Print());
-            Debug.LogFormat("_padding_dims {0}:", _padding_dims.Print());
-            Debug.LogFormat("_dilation_dims {0}:", _dilation_dims.Print());
-            Debug.LogFormat("_group {0}:", _group.Print());
-            Debug.LogFormat("_transposed {0}:", _transposed);
-            */
-            return input.Conv2d(_kernel, _stride_dims, _padding_dims, _dilation_dims, _group,_transposed, _bias);
+                output = output.Add(_bias.Expand(output.Shape).Contiguous());
+            };
+
+            activation = output.Id;
+
+            return output;
         }
 
-        public override int getParameterCount() { return _kernel.Size + _bias.Size; }
+        public override int getParameterCount()
+        {
+            return _biased ? _kernel.Size + _bias.Size : _kernel.Size;
+        }
     }
 }
