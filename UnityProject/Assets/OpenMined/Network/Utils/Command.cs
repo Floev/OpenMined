@@ -1,7 +1,9 @@
+using System;
+using System.Collections.Generic;
 
 namespace OpenMined.Network.Utils
 {
-
+    [Serializable]
 	public class Command
 	{
 		// given that SyftController keeps lists of objects of base types
@@ -20,5 +22,8 @@ namespace OpenMined.Network.Utils
 
 		public string[] tensorIndexParams;
 		public string[] hyperParams;
+
+        //grid
+        public List<GridConfiguration> configurations;
 	}
 }

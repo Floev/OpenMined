@@ -5,11 +5,11 @@ PROJECT_FOLDER="$(pwd)/UnityProject"
 RESULTS_FILENAME="results.xml"
 RESULTS_FILEPATH="$(pwd)"/$RESULTS_FILENAME
 EDITOR_LOG_FILEPATH=" $(echo ~/Library/Logs/Unity/Editor.log)"
-GPU_TESTS_FILEPATH=$PROJECT_FOLDER/Assets/OpenMined.Tests/Editor/FloatTensor/FloatTensorGpuTest.cs
+GPU_TESTS_FILEPATH=${PROJECT_FOLDER}/Assets/OpenMined.Tests/Editor/*/*TensorGpuTest.cs
 
 echo $PROJECT_FOLDER
 
-## Delete GPU tests file
+## Delete GPU tests file  #FIXME find a way to successfully run GPU tests in Travis CI
 rm $GPU_TESTS_FILEPATH
 
 ## Run Unity Editor tests

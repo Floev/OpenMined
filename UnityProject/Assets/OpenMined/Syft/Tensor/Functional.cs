@@ -182,9 +182,9 @@ namespace OpenMined.Syft.Tensor
             {
                 // Reference: https://stackoverflow.com/questions/218060/random-gaussian-variables
 
-                float u1 = 1.0F - UnityEngine.Random.value;
-                float u2 = 1.0F - UnityEngine.Random.value;
-                result.Data[i] = Convert.ToSingle(Math.Sqrt(-2.0F * Math.Log(u1)) * Math.Sin(2.0F * Math.PI * u2));
+                double u1 = 1.0F - UnityEngine.Random.value;
+                double u2 = 1.0F - UnityEngine.Random.value;
+                result.Data[i] = Convert.ToSingle(Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2));
             }
             return result.View(dims);
         }

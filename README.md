@@ -9,7 +9,7 @@ OpenMined Unity Application
 Table of Contents:   
 
  * [Introduction](#introduction)
- * [Quick Setup](#quick-setup)
+ * [Setup](#setup)
  * [General Troubleshooting](#general-troubleshooting)
  * [Links and HowTos](#links-and-how-tos)
  * [References](#references)
@@ -38,21 +38,9 @@ More about this in the [corresponding file](https://github.com/OpenMined/OpenMin
 
 ![Open Mined Architecture](images/architecture.png)
 
-## Quick Setup
+## Setup
 
-1. Install Unity:
-    - Windows & Mac users: Download it from [here](https://store.unity.com/).
-    - Linux users: Download it from [here](http://beta.unity3d.com/download/ee86734cf592/public_download.html)
-
-Note: If you do not already have one, you will have to create a Unity account when you open the Application for the first time. For new users, a Personal account should be ok.
-
-2. Open project in Unity `[File -> Open Project -> Directory/To/OpenMined`]
-
-3. Open Juptyer Notebooks in the `notebooks` directory.  
-
-## Setup Troubleshooting
-
-If you have an issue, refer to the following steps for a more detailed project setup. These steps were confirmed to work under a Windows/linux enviornment, though the steps should be applicable to alternative operating systems.
+If you have an issue, refer to the following steps for a more detailed project setup. These steps were confirmed to work under a Windows/linux environment, though the steps should be applicable to alternative operating systems.
 
 The steps come in two parts:   
 **Part 1:** Unity Setup   
@@ -60,27 +48,31 @@ The steps come in two parts:
 
 **Unity Setup**  
 
-1. Download Unity from [here](https://store.unity.com/) or [here](http://beta.unity3d.com/download/ee86734cf592/public_download.html)(linux)  
-2. Open project in Unity `[Open(Top Right of Home Screen) -> Directory/To/OpenMined`]
+1. Download Unity from 
+    
+    - **Windows:** 
+    https://store.unity.com/
+    
+    - **OSX:** 
+    https://store.unity.com/
+    **Turn on Metal Support**  
+    *NOTE: Unity does not provide metal support for MacOS 10.12.2 and 10.12.3. Please upgrade your OS before using Unity.*
+
+    - Within Unity editor select: `Edit -> Project Settings -> Player`
+        - In the Inspector, scroll down until you find `Metal Editor Support` under `Other Settings` and click the checkbox to turn it on. (skip this if not on Mac OSX)
+        - In the Inspector, expand `Resolution` and check the box for `Run in Background`
+
+    - **Linux:**
+    http://beta.unity3d.com/download/ee86734cf592/public_download.html  
+2. Open project in Unity `[Open(Top Right of Home Screen) -> Directory/To/OpenMined -> /UnityProject]`
 3. In the Project Pane (usually below), double click OpenMinedMain. If you can't find the file for some reason, check the trouble shooting section.
 4. Hit `Play` on the Unity Editor
 
 **Jupyter Setup**
 
-1. Run `jupyter notebook` from you openmined directory
+1. Run `jupyter notebook` from your OpenMined directory
 2. Open [Syft Tensor Example Notebook.ipynb](https://github.com/OpenMined/OpenMined/blob/master/notebooks/demos/Syft%20Tensor%20Example%20Notebook.ipynb)
 3. Run the notebook
-
-### For OSX (High Sierra)
-
-Same steps as above. Download Unity from [here](https://store.unity.com/). I chose the personal version. This will provide you a .dmg installer, which will download and install the necessary components (~800mb).
-
-**If on OSX turn on Metal Support**  
-*NOTE: Unity does not provide metal support for MacOS 10.12.2 and 10.12.3. Please upgrade your OS before using Unity.*
-
-- Within Unity editor select: `Edit -> Project Settings -> Player`
-    - In the Inspector, scroll down until you find `Metal Editor Support` under `Other Settings` and click the checkbox to turn it on. (skip this if not on Mac OSX)
-    - In the Inspector, expand `Resolution` and check the box for `Run in Background`
 
 ## General Troubleshooting
 

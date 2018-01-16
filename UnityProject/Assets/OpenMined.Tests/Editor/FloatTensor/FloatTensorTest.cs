@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 using OpenMined.Network.Controllers;
 
-namespace OpenMined.Tests.Editor.FloatTensor
+namespace OpenMined.Tests.Editor.FloatTensorTests
 {
     [Category("FloatTensorCPUTests")]
     public class FloatTensorCPUTest

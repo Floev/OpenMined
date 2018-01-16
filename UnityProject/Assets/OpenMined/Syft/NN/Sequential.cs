@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime;
 using System.Collections;
 using System.Collections.Generic;
 using JetBrains.Annotations;
@@ -7,6 +8,9 @@ using OpenMined.Network.Utils;
 using OpenMined.Syft.Tensor;
 using OpenMined.Syft.Tensor.Factories;
 using UnityEngine;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
 
 namespace OpenMined.Syft.Layer
 {
@@ -33,7 +37,7 @@ namespace OpenMined.Syft.Layer
             throw new ArgumentOutOfRangeException("Sub-layer " + i + " does not exist.");
         }
 
-        private List<int> getLayers()
+        public List<int> getLayers()
         {
             return this.layers;
         }
@@ -103,6 +107,15 @@ namespace OpenMined.Syft.Layer
                     return out_str;
 
                 }
+                case "config":
+                {
+                    Debug.LogFormat("<color=magenta>Get Config:</color> ");
+
+                    var config = this.GetConfig();
+                    config["backend"] = "openmined";
+                    
+                    return config.ToString(Formatting.None);
+                }
                 default: 
                 {
                     return "Model.processMessage not Implemented:" + msgObj.functionCall;
@@ -118,6 +131,32 @@ namespace OpenMined.Syft.Layer
                 cnt += controller.getModel(layer_idx).getParameterCount();
             }
             return cnt;
+        }
+
+        public JToken GetConfig()
+        {
+            var _this = this;
+            
+            var layer_list = new JArray();
+            for (int i = 0; i < this.layers.Count; i++)
+            {   
+                var layer = controller.getModel(this.layers[i]);
+                layer_list.Add(
+                    new JObject
+                    {
+                        { "class_name", layer.GetType().Name },
+                        { "config", layer.GetConfig() }
+                    }
+                );
+            }
+
+            var config = new JObject
+            {
+                { "class_name", _this.GetType().Name }, 
+                { "config", layer_list}
+            };
+
+            return config;
         }
 
     }

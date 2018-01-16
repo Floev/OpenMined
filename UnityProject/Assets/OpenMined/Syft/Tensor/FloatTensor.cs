@@ -42,7 +42,7 @@ namespace OpenMined.Syft.Tensor
             autograd = _autograd;
             keepgrads = _keepgrads;
             creation_op = _creation_op;
-
+            usage_count = 1;
             InitGraph();
             
             if (autograd)
@@ -279,7 +279,7 @@ namespace OpenMined.Syft.Tensor
                 {
                     var dim = int.Parse(msgObj.tensorIndexParams[0]);
                     var batch_size = int.Parse(msgObj.tensorIndexParams[1]);
-                    return string.Join(",", Batchify(dim, batch_size).Select(x => x.ToString()).ToArray());;
+                    return string.Join(",", Batchify(dim, batch_size).Select(x => x.ToString()).ToArray());
                 }
                 case "ceil":
                 {
@@ -362,7 +362,6 @@ namespace OpenMined.Syft.Tensor
                 }
                 case "delete":
                 {
-                   Debug.LogFormat("<color=cyan>Delete:</color> {0}", this.id);
                    Delete();
                    return "Deleted tensor";
                 }

@@ -56,7 +56,7 @@ namespace OpenMined.Syft.Tensor.Factories
                 _data,
                 _dataBuffer,
                 _shapeBuffer,
-                _shader,
+                shader,
                 _copyData,
                 _dataOnGpu,
                 _autograd, 

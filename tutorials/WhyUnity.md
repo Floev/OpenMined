@@ -38,12 +38,12 @@ Most high-end devices carry Snapdragon 835 and similar processors. Look at that 
 ![snapdragon_835](https://github.com/OpenMined/OpenMined/blob/master/images/WhyUnity/snapdragon_835.png)
 
 Or even better! Smartphones has become the first devices that have **neural dedicated processors**. The new Kirin 970 mounted in the Huawei Mate 10 is an example of that.
-![kirin_970](https://github.com/OpenMined/OpenMined/blob/master/images/WhyUnity/kirin_970.png)
+![kirin_970](https://github.com/OpenMined/OpenMined/blob/master/images/WhyUnity/kirin_970.PNG)
 
 #### iOS
 
 Apple's **A11 Bionic** processor includes **dedicated neural network hardware** that Apple calls a *"Neural Engine"*. This neural network hardware can perform up to 600 billion operations per second. The neural engine allows Apple to implement neural network and machine learning in a more energy-efficient manner than using either the main CPU or the GPU.
-![apple_a11](https://github.com/OpenMined/OpenMined/blob/master/images/WhyUnity/apple_a11.png)
+![apple_a11](https://github.com/OpenMined/OpenMined/blob/master/images/WhyUnity/apple_a11.jpg)
 
 ### PlayStation & Xbox
 

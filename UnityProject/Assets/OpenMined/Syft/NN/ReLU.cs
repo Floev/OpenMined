@@ -1,17 +1,20 @@
-using System;
 using OpenMined.Network.Controllers;
 using OpenMined.Syft.Tensor;
+using UnityEngine;
+using Newtonsoft.Json.Linq;
 
 namespace OpenMined.Syft.Layer
 {
-    public class ReLU : Layer
+    public class ReLU : Layer, LayerDefinition
     {
+
+        [SerializeField] string name = "relu";
 
         public ReLU(SyftController controller)
         {
-            init("relu");
+            init(this.name);
 
-            #pragma warning disable 420
+#pragma warning disable 420
             id = System.Threading.Interlocked.Increment(ref nCreated);
             controller.addModel(this);
         }
@@ -23,7 +26,22 @@ namespace OpenMined.Syft.Layer
 
             return output;
         }
-        
-        public override int getParameterCount(){return 0;}
+
+        public string GetLayerDefinition()
+        {
+            return JsonUtility.ToJson(this);
+        }
+
+        public override int getParameterCount() { return 0; }
+
+        public override JToken GetConfig()
+        {
+            var config = new JObject
+            {
+                { "name", name }           
+            };
+            
+            return config;
+        }
     }
 }

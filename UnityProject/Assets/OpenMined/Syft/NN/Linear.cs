@@ -1,22 +1,24 @@
-﻿using JetBrains.Annotations;
-using OpenMined.Network.Controllers;
-using OpenMined.Network.Utils;
+﻿using OpenMined.Network.Controllers;
 using OpenMined.Syft.Tensor;
+using UnityEngine;
+using OpenMined.Network.Servers;
+using Newtonsoft.Json.Linq;
 
 namespace OpenMined.Syft.Layer
 {
-	public class Linear: Layer
+    
+    public class Linear: Layer, LayerDefinition
 	{
-
 		private int _input;
 		private int _output;
 
-		private readonly FloatTensor _weights;
-		private FloatTensor _bias;
+        [SerializeField] string name = "linear";
+        [SerializeField] public readonly FloatTensor _weights;
+        [SerializeField] FloatTensor _bias;
 		
 		public Linear (SyftController _controller, int input, int output, string initializer="Xavier")
 		{
-			init("linear");
+            init(this.name);
 
 			this.controller = _controller;
 			
@@ -49,9 +51,57 @@ namespace OpenMined.Syft.Layer
 		
 			return output;
 		}
-		
+
+        public string GetLayerDefinition()
+        {
+            return JsonUtility.ToJson(this);
+        }
+
 		public override int getParameterCount(){return _weights.Size + _bias.Size;}
-		
+
+	   	public override JToken GetConfig()
+        {
+		    var config = new JObject
+			{
+			    { "name", "linear" },
+				{ "trainable", true },
+				{ "dtype", "float32" }, 
+				{ "output", _output },
+                { "input", _input },
+				{ "activation", "linear" },
+				{ "use_bias", true },
+				{
+				    "kernel_initializer", new JObject
+					{
+					    { "class_name", "VarianceScaling" },
+						{ 
+						    "config", new JObject
+						  	{
+							    { "scale", 1.0 },
+							  	{ "mode", "fan_avg" },
+							  	{ "distribution", "uniform" },
+							  	{ "seed", null }
+						  	}
+						}
+					}
+				},
+				{ 
+				    "bias_initializer", new JObject
+					{
+		          	    { "class_name", "Zeros"},
+		          		{ "config", new JObject() }
+		          	}
+		        },
+				{ "kernel_regularizer", null },
+		        { "bias_regularizer", null },
+		        { "activity_regularizer", null },
+		        { "kernel_constraint", null },
+		        { "bias_constraint", null }
+				};
+
+				return config;
+		}
+
 	}
 }
 

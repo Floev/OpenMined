@@ -3,7 +3,7 @@ using NUnit.Framework;
 using OpenMined.Network.Controllers;
 using System.Linq;
 
-namespace OpenMined.Tests.Editor.FloatTensor
+namespace OpenMined.Tests.Editor.FloatTensorTests
 {
     [Category("FloatTensorAutogradTests")]
     public class FloatTensorAutogradTest

@@ -31,10 +31,10 @@ namespace OpenMined.Syft.Tensor.Factories
         
         public void Delete(int id)
         {
-            Debug.LogFormat("<color=purple>Removing Tensor {0}</color>", id);
-
             var tensor = tensors [id];
-            
+            string dims = string.Join(", ", tensor.Shape);
+            Debug.Log("<color=purple>Removing Tensor: " + id + "   Shape: " + dims + "</color>");
+
             if(tensor.Grad != null)
                 this.Delete(tensor.Grad.Id);
             tensors.Remove (id);

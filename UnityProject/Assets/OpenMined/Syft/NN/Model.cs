@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using OpenMined.Network.Controllers;
 using OpenMined.Network.Utils;
 using OpenMined.Syft.Tensor;
+using Newtonsoft.Json.Linq;
 
 namespace OpenMined.Syft.Layer
 {
@@ -128,5 +129,12 @@ namespace OpenMined.Syft.Layer
 
         protected abstract string ProcessForwardMessage (Command msgObj, SyftController ctrl);
 
+        public virtual JToken GetConfig () 
+        {   
+            return new JObject
+            {
+                { "backend", "Model.GetConfig not implemented" }
+            };
+        }
     }
 }

@@ -80,6 +80,8 @@ namespace OpenMined.Syft.Tensor
 						{
 							child_pre_initialized = true;
 							child_index = children_indices[i];
+							// Keep track of how often each tensor is used for safe deletion
+							child.Usage_count = child.Usage_count + 1;
 							break;
 						}
 						
@@ -102,6 +104,8 @@ namespace OpenMined.Syft.Tensor
 						// found a child that matches all parameters
 						child_pre_initialized = true;
 						child_index = children_indices[i];
+						// Keep track of how often each tensor is used for safe deletion
+                        child.Usage_count = child.Usage_count + 1;
 						break;
 
 					}
