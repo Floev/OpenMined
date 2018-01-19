@@ -37,8 +37,8 @@ namespace OpenMined.Syft.Layer
             return result.Id + "";
         }
 
-      public string Evaluate(FloatTensor test_input, FloatTensor test_target, Loss.Loss criterion, int batch_size)
-       {
+        public string Evaluate(FloatTensor test_input, FloatTensor test_target, Loss.Loss criterion, int batch_size)
+        {
             if(test_input.Shape[0] != test_target.Shape[0])
                 throw new InvalidDataException("Input and Target tensors don't seem to have the right dims");
 
@@ -80,10 +80,7 @@ namespace OpenMined.Syft.Layer
             }
             test_loss.Fill(loss / num_batches);
             return test_loss.Id.ToString() + "," + predictions.Id.ToString();
-
-
-       }
-
+        }
 
         public int PrepareToFit(FloatTensor input, FloatTensor target, Loss.Loss criterion, Optimizer optimizer, int batch_size)
         {

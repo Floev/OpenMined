@@ -987,7 +987,6 @@ namespace OpenMined.Syft.Tensor
                 result.data[i] = this.Data[i * flat_left[1] + indices.Data[i]];
             }*/
             
-            int j = 0;
             for (int i = 0; i < indices.Size; i++)
             {
                 result.Data[i * flat_left[1] + indices.Data[i]] += x.Data[i];

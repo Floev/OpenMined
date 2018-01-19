@@ -1104,22 +1104,22 @@ namespace OpenMined.Syft.Tensor
             var dimBuffer = SendIntToGpu(TransposeKernel, Shape.Length, "TransposeDims");
             var dim1Buffer = SendIntToGpu(TransposeKernel, dim1, "TransposeDim1");
             var dim2Buffer = SendIntToGpu(TransposeKernel, dim2, "TransposeDim2");
-            var indicesBuffer = new ComputeBuffer(strides.Length, sizeof(int));
+  //          var indicesBuffer = new ComputeBuffer(strides.Length, sizeof(int));
 //            indicesBuffer.SetData(new int[Shape.Length]);
 
             shader.SetBuffer(TransposeKernel, "TransposeData", DataBuffer);
             shader.SetBuffer(TransposeKernel, "TransposeShape", result.shapeBuffer);
 //            shader.SetBuffer(TransposeKernel, "TransposeShape", shapeBuffer);
-            shader.SetBuffer(TransposeKernel, "TransposeStrides", result.StridesBuffer);
-//            shader.SetBuffer(TransposeKernel, "TransposeStrides", StridesBuffer);
-            shader.SetBuffer(TransposeKernel, "TransposeIndices", indicesBuffer);
+            shader.SetBuffer(TransposeKernel, "TransposeStridesIn", StridesBuffer);
+            shader.SetBuffer(TransposeKernel, "TransposeStridesOut", result.StridesBuffer);
+//            shader.SetBuffer(TransposeKernel, "TransposeIndices", indicesBuffer);
             shader.SetBuffer(TransposeKernel, "TransposeResult", result.DataBuffer);
             shader.Dispatch(TransposeKernel, this.size, 1, 1);
 
             dimBuffer.Release();
             dim1Buffer.Release();
             dim2Buffer.Release();
-            indicesBuffer.Release();
+//            indicesBuffer.Release();
 
             return result;
         }
