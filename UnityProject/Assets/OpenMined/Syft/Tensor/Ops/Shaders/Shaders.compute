@@ -12,11 +12,7 @@ RWStructuredBuffer<float> AbsResult;
 
 [numthreads(4,1,1)]
 void Abs (uint3 id : SV_DispatchThreadID) {
-	if(AbsData[id.x] < 0) {
-		AbsResult[id.x] = -AbsData[id.x];
-	} else {
-		AbsResult[id.x] = AbsData[id.x];
-	}
+	AbsResult[id.x] = abs(AbsData[id.x]);
 }
 
 #pragma kernel Abs_
@@ -191,6 +187,34 @@ void AddMM_ (uint3 id : SV_DispatchThreadID) {
 		int BDataIndex = (Arow * N) + i;
 		int CDataIndex = Acol + (i * O);
 		AddmmDataA_[id.x] += AddmmDataB_[ BDataIndex ] * AddmmDataC_[ CDataIndex ];
+	}
+}
+
+#pragma kernel AddMMT_
+
+RWStructuredBuffer<float> AddmmtDataA_;
+StructuredBuffer<float> AddmmtDataB_;
+StructuredBuffer<float> AddmmtDataC_;
+StructuredBuffer<int> AddmmtDimensionsM_;
+StructuredBuffer<int> AddmmtDimensionsN_;
+StructuredBuffer<int> AddmmtDimensionsO_;
+
+[numthreads(4,1,1)]
+void AddMMT_ (uint3 id : SV_DispatchThreadID) {
+
+	int M = AddmmtDimensionsM_[0];
+	int N = AddmmtDimensionsN_[0];
+	int O = AddmmtDimensionsO_[0];
+
+	int j = id % O;
+	int i = (id - j) / M;
+	int Bid = i * N;
+	int Cid = j * N;
+	for (int l = 0; l < N; l++)
+	{
+		AddmmtDataA_[id.x] += AddmmtDataB_[Bid] * AddmmtDataC_[Cid];
+		Bid += 1;
+		Cid += 1;
 	}
 }
 
@@ -839,6 +863,34 @@ RWStructuredBuffer<float> SinhData_;
 [numthreads(4,1,1)]
 void Sinh_ (uint3 id: SV_DispatchThreadID) {
     SinhData_[id.x] = sinh(SinhData_[id.x]);
+}
+
+#pragma kernel Transpose
+
+StructuredBuffer<int> TransposeDims;
+StructuredBuffer<int> TransposeDim1;
+StructuredBuffer<int> TransposeDim2;
+StructuredBuffer<float> TransposeData;
+StructuredBuffer<int> TransposeShape;
+StructuredBuffer<int> TransposeStrides;
+RWStructuredBuffer<float> TransposeResult;
+
+[numthreads(4,1,1)]
+void Transpose (uint3 id: SV_DispatchThreadID) {
+	int indices[10];
+	int idx = id.x;
+	for (int i = 0; i < TransposeDims[0]; i++) {
+		indices[i] = (idx - (idx % (TransposeStrides[i]))) / TransposeStrides[i];
+		idx -= indices[i] * TransposeStrides[i];
+	}
+	int tmp = indices[TransposeDim1[0]];
+	indices[TransposeDim1[0]] = indices[TransposeDim2[0]];
+	indices[TransposeDim2[0]] = tmp;
+	int offset = 0;
+	for (int i = 0; i < TransposeDims[0]; i++) {
+		offset += indices[i] * TransposeStrides[i];
+	}
+	TransposeResult[id.x] = TransposeData[offset];
 }
 
 #pragma kernel Triu_

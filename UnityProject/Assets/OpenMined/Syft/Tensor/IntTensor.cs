@@ -41,6 +41,7 @@ namespace OpenMined.Syft.Tensor
             int[] _data = null,
             ComputeBuffer _dataBuffer = null,
             ComputeBuffer _shapeBuffer = null,
+            ComputeBuffer _stridesBuffer = null,
             ComputeShader _shader = null,
             bool _copyData = true,
             bool _dataOnGpu = false,
@@ -66,15 +67,15 @@ namespace OpenMined.Syft.Tensor
 
             // Third: let's see what kind of data we've got. We should either have
             // a GPU ComputeBuffer or a data[] object.
-            if (_data != null && _shapeBuffer == null && _dataBuffer == null)
+            if (_data != null && _shapeBuffer == null && _stridesBuffer == null && _dataBuffer == null)
             {
                 InitCpu(_data: _data, _copyData: _copyData);
             }
-            else if (_dataBuffer != null && _shapeBuffer != null && SystemInfo.supportsComputeShaders && _data == null)
+            else if (_dataBuffer != null && _shapeBuffer != null && _stridesBuffer != null && SystemInfo.supportsComputeShaders && _data == null)
             {
                 // looks like we have GPU data being passed in... initialize a GPU tensor.
 
-                InitGpu(_shader, _dataBuffer, _shapeBuffer, _copyData);
+                InitGpu(_shader, _dataBuffer, _shapeBuffer, _stridesBuffer, _copyData);
             }
             else
             {
@@ -93,7 +94,7 @@ namespace OpenMined.Syft.Tensor
                         shapeBuffer = new ComputeBuffer(shape.Length, sizeof(int));
                         shapeBuffer.SetData(shape);
 
-                        InitGpu(_shader, _dataBuffer, _shapeBuffer, _copyData);
+                        InitGpu(_shader, _dataBuffer, _shapeBuffer, _stridesBuffer, _copyData);
                         initShaderKernels();
                     }
                     else
@@ -115,10 +116,11 @@ namespace OpenMined.Syft.Tensor
                     {
                         _shapeBuffer = new ComputeBuffer(shape.Length, sizeof(int));
                         _shapeBuffer.SetData(shape);
-
+                        _stridesBuffer = new ComputeBuffer(shape.Length, sizeof(int));
+                        _stridesBuffer.SetData(strides);
                         _dataBuffer = new ComputeBuffer(size, sizeof(float));
 
-                        InitGpu(_shader: _shader, _dataBuffer: _dataBuffer, _shapeBuffer: _shapeBuffer,
+                        InitGpu(_shader: _shader, _dataBuffer: _dataBuffer, _shapeBuffer: _shapeBuffer, _stridesBuffer: _stridesBuffer,
                             _copyData: false);
                         initShaderKernels();
                         this.Zero_();

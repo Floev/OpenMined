@@ -64,6 +64,7 @@ namespace OpenMined.Syft.Tensor.Factories
             float[] _data = null,
             ComputeBuffer _dataBuffer = null,
             ComputeBuffer _shapeBuffer = null,
+            ComputeBuffer _stridesBuffer = null,
             ComputeShader _shader = null,
             bool _copyData = true,
             bool _dataOnGpu = false,
@@ -74,7 +75,6 @@ namespace OpenMined.Syft.Tensor.Factories
 
             if (ctrl.allow_new_tensors)
             {
-
                 FloatTensor tensor = new FloatTensor();
 
                 tensor.init(this,
@@ -82,6 +82,7 @@ namespace OpenMined.Syft.Tensor.Factories
                     _data,
                     _dataBuffer,
                     _shapeBuffer,
+                    _stridesBuffer,
                     _shader,
                     _copyData,
                     _dataOnGpu,
@@ -97,7 +98,6 @@ namespace OpenMined.Syft.Tensor.Factories
             {
                 throw new Exception("Attempted to Create a new FloatTensor");
             }
-
         }
        
         public ComputeShader GetShader()

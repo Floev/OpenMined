@@ -1,6 +1,7 @@
-using System;
 using NUnit.Framework;
 using OpenMined.Network.Controllers;
+using System;
+using UnityEngine;
 
 namespace OpenMined.Tests.Editor.FloatTensorTests
 {
@@ -158,22 +159,73 @@ namespace OpenMined.Tests.Editor.FloatTensorTests
         [Test]
         public void AddMatrixMultiply()
         {
-            float[] base1_data = new float[] {1, 2, 3, 4};
-            int[] base1_shape = new int[] {2, 2};
+            float[] base1_data = new float[] { 1, 2, 3, 4 };
+            int[] base1_shape = new int[] { 2, 2 };
             var base1 = ctrl.floatTensorFactory.Create(_data: base1_data, _shape: base1_shape);
 
-            float[] base2_data = new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9};
-            int[] base2_shape = new int[] {3, 3};
+            float[] base2_data = new float[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            int[] base2_shape = new int[] { 3, 3 };
             var base2 = ctrl.floatTensorFactory.Create(_data: base2_data, _shape: base2_shape);
 
-            float[] data = new float[] {1, 2, 3, 4, 5, 6};
-            int[] tensor1_shape = new int[] {2, 3};
-            int[] tensor2_shape = new int[] {3, 2};
+            float[] data = new float[] { 1, 2, 3, 4, 5, 6 };
+            int[] tensor1_shape = new int[] { 2, 3 };
+            int[] tensor2_shape = new int[] { 3, 2 };
             var tensor1 = ctrl.floatTensorFactory.Create(_data: data, _shape: tensor1_shape);
             var tensor2 = ctrl.floatTensorFactory.Create(_data: data, _shape: tensor2_shape);
 
             base1.AddMatrixMultiply(tensor1, tensor2);
             base2.AddMatrixMultiply(tensor2, tensor1);
+
+            for (int i = 0; i < base1_shape[0]; i++)
+            {
+                for (int j = 0; j < base1_shape[1]; j++)
+                {
+                    float mm_res = base1_data[i * base1_shape[1] + j];
+                    for (int k = 0; k < tensor1_shape[1]; k++)
+                    {
+                        mm_res += tensor1[i, k] * tensor2[k, j];
+                    }
+                    Assert.AreEqual(base1[i, j], mm_res);
+                }
+            }
+
+            for (int i = 0; i < base2_shape[0]; i++)
+            {
+                for (int j = 0; j < base2_shape[1]; j++)
+                {
+                    float mm_res = base2_data[i * base2_shape[1] + j];
+                    for (int k = 0; k < tensor2_shape[1]; k++)
+                    {
+                        mm_res += tensor2[i, k] * tensor1[k, j];
+                    }
+                    Assert.AreEqual(base2[i, j], mm_res);
+                }
+            }
+        }
+
+        [Test]
+        public void AddMMT()
+        {
+            float[] base1_data = new float[] { 1, 2, 3, 4 };
+            int[] base1_shape = new int[] { 2, 2 };
+            var base1 = ctrl.floatTensorFactory.Create(_data: base1_data, _shape: base1_shape);
+
+            float[] base2_data = new float[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            int[] base2_shape = new int[] { 3, 3 };
+            var base2 = ctrl.floatTensorFactory.Create(_data: base2_data, _shape: base2_shape);
+
+            float[] data = new float[] { 1, 2, 3, 4, 5, 6 };
+            int[] tensor1_shape = new int[] { 2, 3 };
+            int[] tensor2_shape = new int[] { 3, 2 };
+            var tensor1 = ctrl.floatTensorFactory.Create(_data: data, _shape: tensor1_shape);
+            var tensor2 = ctrl.floatTensorFactory.Create(_data: data, _shape: tensor2_shape);
+
+            Debug.LogFormat("base1 {0}, left {1}, right {2}", base1.Print(), tensor1.Print(), tensor2.Transpose().Print());
+            base1.AddMMT(tensor1, tensor2.Transpose());
+            Debug.LogFormat("base1 res {0}", base1.Print());
+            Debug.LogFormat("base2 {0}, left {1}, right {2}", base2.Print(), tensor2.Print(), tensor1.Transpose().Print());
+            base2.AddMMT(tensor2, tensor1.Transpose());
+            Debug.LogFormat("base2 res {0}", base2.Print());
 
             for (int i = 0; i < base1_shape[0]; i++)
             {
@@ -3065,6 +3117,9 @@ namespace OpenMined.Tests.Editor.FloatTensorTests
             }
 
             var transposed = tensor.Transpose(0, 2);
+            Debug.LogFormat("In: {0}", tensor.Print());
+            Debug.LogFormat("Out: {0}", transposed.Print());
+
             for (int i = 0; i < transposed.Shape[0]; i++)
             {
                 for (int j = 0; j < transposed.Shape[1]; j++)

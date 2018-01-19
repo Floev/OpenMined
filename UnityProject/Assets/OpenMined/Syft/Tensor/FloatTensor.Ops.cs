@@ -25,6 +25,7 @@ namespace OpenMined.Syft.Tensor
                     _data: data,
                     _dataBuffer: dataBuffer,
                     _shapeBuffer: shapeBuffer,
+                    _stridesBuffer: stridesBuffer,
                     _shader: shader,
                     _copyData: true,
                     _dataOnGpu: dataOnGpu,
@@ -159,8 +160,7 @@ namespace OpenMined.Syft.Tensor
 
 			return result;
 		}
-
-        
+                
         public FloatTensor Add(float value, bool inline = false, FloatTensor result = null)
         {
             result = HookGraph (ref result, scalar_input:value, creation_op:"add_scalar", inline:inline);
@@ -200,10 +200,11 @@ namespace OpenMined.Syft.Tensor
 				return result;
 			}
 		}
-        
+
         public FloatTensor AddMatrixMultiply(FloatTensor tensor1, FloatTensor tensor2)
         {
-            if (!IsContiguous() || !tensor1.IsContiguous() || !tensor2.IsContiguous()) {
+            if (!IsContiguous() || !tensor1.IsContiguous() || !tensor2.IsContiguous())
+            {
                 throw new InvalidOperationException("All tensors must be contiguous, call Contiguous() to convert");
             }
 
@@ -219,7 +220,7 @@ namespace OpenMined.Syft.Tensor
             if (res_shape[0] != shape1[0])
                 throw new InvalidOperationException(String.Format("First dimension doesn't match: {0} vs {1}.", res_shape[0], shape1[0]));
             if (res_shape[1] != shape2[1])
-                throw new InvalidOperationException(String.Format("Last dimension doesn't match: {0} vs {1}.", res_shape[res_shape.Length - 1],shape2[shape2.Length - 1]));
+                throw new InvalidOperationException(String.Format("Last dimension doesn't match: {0} vs {1}.", res_shape[res_shape.Length - 1], shape2[shape2.Length - 1]));
 
             if (gpu)
             {
@@ -239,6 +240,64 @@ namespace OpenMined.Syft.Tensor
                         for (var j = 0; j < shape1[1]; j++)
                         {
                             Data[idx] += tensor1.Data[j + row_offset] * tensor2.Data[j * shape2[1] + col];
+                        }
+                    }
+                });
+                return this;
+            }
+            else
+            {
+                Debug.Log("Data for all Tensors needs to be colocated on the same device. - CPU != GPU");
+            }
+            return this;
+        }
+
+        public FloatTensor AddMMT(FloatTensor tensor1, FloatTensor tensor2)
+        {
+            if (!IsContiguous() || !tensor1.IsContiguous() || !tensor2.IsContiguous())
+            {
+                throw new InvalidOperationException("All tensors must be contiguous, call Contiguous() to convert");
+            }
+
+            bool gpu = dataOnGpu & tensor1.DataOnGpu & tensor2.DataOnGpu;
+            bool cpu = !(dataOnGpu | tensor1.DataOnGpu | tensor2.DataOnGpu);
+
+            int[] res_shape = Shape;
+            int[] shape1 = tensor1.Shape;
+            int[] shape2 = tensor2.Shape;
+
+            if (shape1[1] != shape2[1])
+                throw new InvalidOperationException(String.Format("Matrix multiply transpose not possible: {0} & {1}.", shape1[1], shape2[1]));
+            if (res_shape[0] != shape1[0])
+                throw new InvalidOperationException(String.Format("First dimension doesn't match: {0} vs {1}.", res_shape[0], shape1[0]));
+            if (res_shape[1] != shape2[0])
+                throw new InvalidOperationException(String.Format("Last dimension doesn't match: {0} vs {1}.", res_shape[res_shape.Length - 1], shape2[shape2.Length - 1]));
+
+            if (gpu)
+            {
+                AddMMTGPU(tensor1, tensor2);
+            }
+            else if (cpu)
+            {
+                var nCpu = Math.Min( SystemInfo.processorCount, size );
+                Parallel.For(0, nCpu, workerId =>
+                {
+    //                Debug.LogFormat("Running worker {0}, size {1}, nCpu {2}", workerId, size, nCpu);
+                    var idx = size * workerId / nCpu;
+                    //                    Debug.LogFormat("Running worker {0}, start idx {1}",workerId,idx);
+                    for (int k = idx; k < size * ( workerId + 1 ) / nCpu; k++)
+                    {
+                        var j = k % res_shape[1];
+                        var i = (k - j) / res_shape[0];
+                        int t1_start = i * shape1[1];
+                        int t2_start = j * shape1[1];
+                        //                      Debug.LogFormat("Running worker {0}, idx {1}, i {2}, j {3}", workerId,idx,i,j);
+                        for (var l = 0; l < shape1[1]; l++)
+                        {
+                            Debug.LogFormat("Running worker {0}, idx {1}, i {2}, j {3}, from {4} & {5}", workerId, k, i, j, t1_start, t2_start);
+                            Data[k] += tensor1[t1_start] * tensor2[t2_start];
+                            t1_start += 1;
+                            t2_start += 1;
                         }
                     }
                 });
@@ -1103,6 +1162,31 @@ namespace OpenMined.Syft.Tensor
                                 resultShape:new int[]{shape[0],x.shape[1]});
             
             result.AddMatrixMultiply(this, x);
+
+            return result;
+        }
+
+        //same as this.MM(x.transpose), but faster
+        public FloatTensor MMT(FloatTensor x, FloatTensor result = null)
+        {
+            if (!IsContiguous() || !x.IsContiguous())
+            {
+                throw new InvalidOperationException("All tensors must be contiguous, call Contiguous() to convert");
+            }
+
+            if (shape.Length != 2 || x.shape.Length != 2)
+            {
+                throw new InvalidOperationException(
+                    "Cannot do MM on tensors that aren't 2 dimentional. Try calling view() to reshape");
+            }
+
+            result = HookGraph(result: ref result,
+                                tensor_inputs: new FloatTensor[] { x },
+                                creation_op: "mmt",
+                                inline: false,
+                                resultShape: new int[] { shape[0], x.shape[0] });
+
+            result.AddMMT(this, x);
 
             return result;
         }
@@ -2078,6 +2162,9 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor Transpose(int dimension1, int dimension2, FloatTensor result = null, bool inline = false)
         {
+            if( inline )
+                throw (new NotImplementedException("transpose inline not yet available"));
+
             if (!IsContiguous()) {
                 throw new InvalidOperationException ("Tensor must be contiguous, call Contiguous() to convert");
             }
@@ -2093,31 +2180,72 @@ namespace OpenMined.Syft.Tensor
                 return this;
             }
 
-            var newShape = (int[]) Shape.Clone();
+            var newShape = (int[])Shape.Clone();
             var tmpDim = newShape[dimension1];
             newShape[dimension1] = newShape[dimension2];
             newShape[dimension2] = tmpDim;
 
             //var result = new FloatTensor(_controller: controller, _shape: newShape, _shader: this.shader);
-            result = HookGraph(ref result, creation_op:"transpose", inline:inline, resultShape:newShape);
-  
-            var nCpu = SystemInfo.processorCount;
-            Parallel.For(0, nCpu, workerId =>
-            {
-                var max = size * (workerId + 1) / nCpu;
-                for (var i = size * workerId / nCpu; i < max; i++)
-                {
-                    var idxs = GetIndices(i);
-                    var tmp = idxs[dimension1];
-                    idxs[dimension1] = idxs[dimension2];
-                    idxs[dimension2] = tmp;
-                    result[idxs] = this[i];
-                }
-            });
+            Debug.Log("Run the transpose hook");
+            result = HookGraph(ref result, creation_op: "transpose", inline: inline, resultShape: newShape);
 
+            Debug.LogFormat("Shape of input: {0}", string.Join(",", Shape));
+            Debug.LogFormat("Shape of result: {0}", string.Join(",", result.Shape));
+            Debug.LogFormat("Strides of input: {0}", string.Join(",", Strides));
+            Debug.LogFormat("Strides of result: {0}", string.Join(",", result.Strides));
+
+            if (dataOnGpu)
+            {
+                Debug.Log("Transpose result init gpu");
+                Debug.LogFormat("Result dataongpu: {0}", result.DataOnGpu);
+                result.Gpu(shader);
+/*                Debug.LogFormat("Shape of input: {0}", string.Join(",", Shape));
+                Debug.LogFormat("Shape of result: {0}", string.Join(",", result.Shape));
+                Debug.LogFormat("Strides of input: {0}", string.Join(",", Strides));
+                Debug.LogFormat("Strides of result: {0}", string.Join(",", result.Strides));
+                */
+                //if (inline) {
+                //TransposeGPU_(); return this; 
+                //}
+                //else {
+                return TransposeGPU(result, dimension1, dimension2);
+                //}
+            }
+            else
+            {
+                var nCpu = SystemInfo.processorCount;
+                Parallel.For(0, nCpu, workerId =>
+                {
+                    var max = size * (workerId + 1) / nCpu;
+                    for (var i = size * workerId / nCpu; i < max; i++)
+                    {
+                        var idxs = result.GetIndices(i);
+                        var tmp = idxs[dimension1];
+                        idxs[dimension1] = idxs[dimension2];
+                        idxs[dimension2] = tmp;
+                        result[i] = this[idxs];
+                    }
+                });
+            }
             return result;
+
+            /* for (var i = 0; i < size; i++)
+             {
+                 var idx = i;
+                 var indices = new int[Shape.Length];
+                 for (var i = 0; i < Shape.Length; ++i)
+                 {
+                     indices[i] = (idx - (idx % (strides[i]))) / strides[i];
+                     idx -= indices[i] * strides[i];
+                 }
+
+                 var tmp = indices[dimension1];
+                 indices[dimension1] = indices[dimension2];
+                 indices[dimension2] = tmp;
+                 result[indices] = this[i];
+             }*/
         }
-        
+
         public void Triu_(int k)
         {
             if (!IsContiguous()) {
@@ -2126,7 +2254,7 @@ namespace OpenMined.Syft.Tensor
 
             if (shape.Length != 2)
             {
-                throw new InvalidOperationException(
+                throw new InvalidOperationException (
                     String.Format("Matrix multiply not possible: Num. Dimensions {0} != 2.", shape.Length));
             }
             if (dataOnGpu)
@@ -2293,15 +2421,14 @@ namespace OpenMined.Syft.Tensor
                 result.Add(this, inline: true, override_checks:true);
 
                 return result;
-
             }
-            
         }
 
         public FloatTensor ViewAs(FloatTensor x, bool inline = false)
         {
             return this.View(x.shape, inline);
         }
+
 
 // closes class and namespace
     }

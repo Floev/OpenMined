@@ -46,10 +46,9 @@ namespace OpenMined.Syft.Tensor
 		    						float scalar_input = -1, 		    
 		    						FloatTensor[] tensor_inputs = null, 
 		    						int[] resultShape = null,
-		    						float[] resultData = null, 
+		    						float[] resultData = null,
 		    						IntTensor[] indices = null)
-	    {
-		    
+	    {		    
 		    // no dynamic graph for inline operations
 		    if (inline)
 			    return this;
@@ -143,33 +142,29 @@ namespace OpenMined.Syft.Tensor
 					    _data: resultData,
 					    _dataBuffer: dataBuffer,
 					    _shapeBuffer: shapeBuffer,
+                        _stridesBuffer: stridesBuffer,
 					    _shader: shader,
 					    _copyData: true,
-					    _dataOnGpu: dataOnGpu,
+					    _dataOnGpu: false, // if we use dataOnGPU, the result.Gpu will not be called
 					    _autograd: resultAutograd, // if either tensor doesn't have gradients
 					    _keepgrads: keepgrads, // neither does the result. This might not end up being
 					    _creation_op: creation_op); // a good decision in the long run. We'll see.				    
 				    
 				    if (this.dataOnGpu)
 					    result.Gpu(shader);
-				    
-
 			    }
 		    }
 		    if (autograd_pre_initialized)
 		    {
-			    
 				this.ResetAutogradCounts();
 				result.ResetAutogradCounts();
 				
 				if(tensor_inputs != null)
 					foreach (FloatTensor tensor in tensor_inputs)
 						tensor.ResetAutogradCounts();
-					
 			}
 			else
 			{
-				
 				result.InitGraph();
 				result.creators.Add(this.id);
 				result.creation_op = creation_op;
@@ -184,7 +179,8 @@ namespace OpenMined.Syft.Tensor
 						_data: new float[] {scalar_input},
 						_dataBuffer: dataBuffer,
 						_shapeBuffer: shapeBuffer,
-						_shader: shader,
+                         _stridesBuffer: stridesBuffer,
+                        _shader: shader,
 						_copyData: true,
 						_dataOnGpu: dataOnGpu,
 						_autograd: autograd,
@@ -197,10 +193,8 @@ namespace OpenMined.Syft.Tensor
 					{
 						result.creators.Add(tensor.id);
 						tensor.children_indices.Add(result.Id);
-						tensor.children_counts.Add(0);
-						
-					}
-					
+						tensor.children_counts.Add(0);						
+					}					
 				
 				// special storage for the graph so that we can know which indices of the parent to 
 				// backprop into. note that int_creators are expected to be non-differentiable and so we do

@@ -9,6 +9,7 @@ namespace OpenMined.Syft.Tensor
 
         protected ComputeBuffer dataBuffer;
         protected ComputeBuffer shapeBuffer;
+        protected ComputeBuffer stridesBuffer;
 
         public bool DataOnGpu => dataOnGpu;
 
@@ -22,6 +23,12 @@ namespace OpenMined.Syft.Tensor
         {
             get { return shapeBuffer; }
             set { shapeBuffer = value; }
+        }
+
+        public ComputeBuffer StridesBuffer
+        {
+            get { return stridesBuffer; }
+            set { stridesBuffer = value; }
         }
 
         public bool Gpu(ComputeShader _shader)
@@ -49,10 +56,18 @@ namespace OpenMined.Syft.Tensor
         protected void CopyCputoGpu()
         {
             dataBuffer = new ComputeBuffer(size, Marshal.SizeOf(default(T)));
-            shapeBuffer = new ComputeBuffer(shape.Length, sizeof(int));
+            shapeBuffer = new ComputeBuffer(Shape.Length, sizeof(int));
+            stridesBuffer = new ComputeBuffer(Strides.Length, sizeof(int));
 
-            dataBuffer.SetData(Data);
-            shapeBuffer.SetData(shape);
+            Debug.LogFormat("Copying CPU to GPU");
+//            Debug.LogFormat("Data: {0}", string.Join(",", Data));
+            Debug.LogFormat("Shape: {0}", string.Join(",", Shape));
+            Debug.LogFormat("Strides: {0}", string.Join(",", Strides));
+
+            if( data != null )
+                dataBuffer.SetData(Data);
+            shapeBuffer.SetData(Shape);
+            stridesBuffer.SetData(Strides);
 
             dataOnGpu = true;
         }
@@ -66,6 +81,7 @@ namespace OpenMined.Syft.Tensor
         {
             dataBuffer?.Release();
             shapeBuffer?.Release();
+            stridesBuffer?.Release();
             dataOnGpu = false;
         }
     }

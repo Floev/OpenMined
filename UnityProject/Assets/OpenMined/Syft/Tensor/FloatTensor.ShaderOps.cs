@@ -17,6 +17,7 @@ namespace OpenMined.Syft.Tensor
         [SerializeField] private static int AddScalarKernel;
         [SerializeField] private static int AddElemKernel;
         [SerializeField] private static int AddMMKernel_;
+        [SerializeField] private static int AddMMTKernel_;
         [SerializeField] private static int AddMVKernel_;
         [SerializeField] private static int CeilKernel;
         [SerializeField] private static int CeilKernel_;
@@ -75,6 +76,7 @@ namespace OpenMined.Syft.Tensor
         [SerializeField] private static int SinhKernel;
         [SerializeField] private static int SinhKernel_;
         [SerializeField] private static int TriuKernel_;
+        [SerializeField] private static int TransposeKernel;
         [SerializeField] private static int TruncKernel;
 
         public void initShaderKernels()
@@ -96,6 +98,7 @@ namespace OpenMined.Syft.Tensor
             AddScalarKernel = shader.FindKernel("AddScalar");
             AddElemKernel = shader.FindKernel("AddElem");
             AddMMKernel_ = shader.FindKernel("AddMM_");
+            AddMMTKernel_ = shader.FindKernel("AddMMT_");
             AddMVKernel_ = shader.FindKernel("AddMV_");
             CeilKernel = shader.FindKernel("Ceil");
             CeilKernel_ = shader.FindKernel("Ceil_");
@@ -155,6 +158,7 @@ namespace OpenMined.Syft.Tensor
             Reduce1DSumKernel = shader.FindKernel("Reduce1DSum");
             SinhKernel = shader.FindKernel("Sinh");
             SinhKernel_ = shader.FindKernel("Sinh_");
+            TransposeKernel = shader.FindKernel("Transpose");
             TriuKernel_ = shader.FindKernel("Triu_");
             TruncKernel = shader.FindKernel("Trunc");
             ZeroKernel_ = shader.FindKernel("Zero_");
@@ -431,6 +435,24 @@ namespace OpenMined.Syft.Tensor
             bufferO.Release();
         }
 
+        public void AddMMTGPU(FloatTensor tensor_1, FloatTensor tensor_2)
+        {
+            Debug.LogFormat("<color=blue>FloatTensor.addmmt dataOnGpu: {0}</color>", dataOnGpu);
+
+            // Tensor 1 (M x N), Tensor 2 (O x N), this (M x O)
+            var bufferM = SendIntToGpu(AddMMTKernel_, tensor_1.shape[0], "AddmmtDimensionsM_");
+            var bufferN = SendIntToGpu(AddMMTKernel_, tensor_1.shape[1], "AddmmtDimensionsN_");
+            var bufferO = SendIntToGpu(AddMMTKernel_, tensor_2.shape[0], "AddmmtDimensionsO_");
+            shader.SetBuffer(AddMMTKernel_, "AddmmtDataA_", dataBuffer);
+            shader.SetBuffer(AddMMTKernel_, "AddmmtDataB_", tensor_1.DataBuffer);
+            shader.SetBuffer(AddMMTKernel_, "AddmmtDataC_", tensor_2.DataBuffer);
+            shader.Dispatch(AddMMTKernel_, size, 1, 1);
+
+            bufferM.Release();
+            bufferN.Release();
+            bufferO.Release();
+        }
+
         public FloatTensor CeilGPU(FloatTensor result)
         {
             if (!dataOnGpu) return this;
@@ -449,7 +471,6 @@ namespace OpenMined.Syft.Tensor
             shader.Dispatch(AddMVKernel_, this.Size, 1, 1);
             refShapeBuffer.Release();
         }
-
 
         public void CeilGPU_()
         {
@@ -1064,6 +1085,45 @@ namespace OpenMined.Syft.Tensor
             shader.Dispatch(SinhKernel_, this.size, 1, 1);
         }
 
+        public FloatTensor TransposeGPU(FloatTensor result, int dim1, int dim2)
+        {
+            var inttest = new int[result.size];
+            var floattest = new float[result.size];
+            dataBuffer.GetData(floattest);
+            Debug.LogFormat("DataBuffer: {0}", string.Join(",",floattest));
+            shapeBuffer.GetData(inttest);
+            Debug.LogFormat("shapeBuffer: {0}", string.Join(",", inttest));
+            result.ShapeBuffer.GetData(inttest);
+            Debug.LogFormat("resultShapeBuffer: {0}", string.Join(",", inttest));
+            stridesBuffer.GetData(inttest);
+            Debug.LogFormat("stridesBuffer: {0}", string.Join(",", inttest));
+            result.StridesBuffer.GetData(inttest);
+            Debug.LogFormat("resultStridesBuffer: {0}", string.Join(",", inttest));
+
+
+            var dimBuffer = SendIntToGpu(TransposeKernel, Shape.Length, "TransposeDims");
+            var dim1Buffer = SendIntToGpu(TransposeKernel, dim1, "TransposeDim1");
+            var dim2Buffer = SendIntToGpu(TransposeKernel, dim2, "TransposeDim2");
+            var indicesBuffer = new ComputeBuffer(strides.Length, sizeof(int));
+//            indicesBuffer.SetData(new int[Shape.Length]);
+
+            shader.SetBuffer(TransposeKernel, "TransposeData", DataBuffer);
+            shader.SetBuffer(TransposeKernel, "TransposeShape", result.shapeBuffer);
+//            shader.SetBuffer(TransposeKernel, "TransposeShape", shapeBuffer);
+            shader.SetBuffer(TransposeKernel, "TransposeStrides", result.StridesBuffer);
+//            shader.SetBuffer(TransposeKernel, "TransposeStrides", StridesBuffer);
+            shader.SetBuffer(TransposeKernel, "TransposeIndices", indicesBuffer);
+            shader.SetBuffer(TransposeKernel, "TransposeResult", result.DataBuffer);
+            shader.Dispatch(TransposeKernel, this.size, 1, 1);
+
+            dimBuffer.Release();
+            dim1Buffer.Release();
+            dim2Buffer.Release();
+            indicesBuffer.Release();
+
+            return result;
+        }
+
         public void TriuGPU_(int k)
         {
             var dim = new Dimensions[]
@@ -1090,7 +1150,6 @@ namespace OpenMined.Syft.Tensor
             shader.Dispatch(TruncKernel, this.size, 1, 1);
             return result;
         }
-
 
         public struct Dimensions
         {

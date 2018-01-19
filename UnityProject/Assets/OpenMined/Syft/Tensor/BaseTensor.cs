@@ -98,7 +98,7 @@ namespace OpenMined.Syft.Tensor
             }
         }
 
-        public void InitGpu(ComputeShader _shader, ComputeBuffer _dataBuffer, ComputeBuffer _shapeBuffer,
+        public void InitGpu(ComputeShader _shader, ComputeBuffer _dataBuffer, ComputeBuffer _shapeBuffer, ComputeBuffer _stridesBuffer,
             bool _copyData)
         {
             if (!SystemInfo.supportsComputeShaders)
@@ -117,14 +117,19 @@ namespace OpenMined.Syft.Tensor
             {
                 var tempData = new T[_dataBuffer.count];
                 var tempShape = new int[shape.Length];
+                var tempStrides = new int[shape.Length];
 
                 _dataBuffer.GetData(tempData);
                 _shapeBuffer.GetData(tempShape);
+                _stridesBuffer.GetData(tempStrides);
+
                 dataBuffer = new ComputeBuffer(_dataBuffer.count, Marshal.SizeOf(default(T)));
                 shapeBuffer = new ComputeBuffer(_shapeBuffer.count, sizeof(int));
+                stridesBuffer = new ComputeBuffer(_stridesBuffer.count, sizeof(int));
 
                 dataBuffer.SetData(tempData);
                 shapeBuffer.SetData(tempShape);
+                stridesBuffer.SetData(tempStrides);
             }
 
             // Third: let's set the tensor's size to be equal to that of the buffer
@@ -258,9 +263,5 @@ namespace OpenMined.Syft.Tensor
             // Sixth: let's check to see that our shape and data sizes match.
             size = acc;
         }
-
-
-
-
     }
 }
