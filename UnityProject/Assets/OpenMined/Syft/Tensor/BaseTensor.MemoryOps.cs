@@ -59,10 +59,10 @@ namespace OpenMined.Syft.Tensor
             shapeBuffer = new ComputeBuffer(Shape.Length, sizeof(int));
             stridesBuffer = new ComputeBuffer(Strides.Length, sizeof(int));
 
-            Debug.LogFormat("Copying CPU to GPU");
+            //Debug.LogFormat("Copying CPU to GPU");
 //            Debug.LogFormat("Data: {0}", string.Join(",", Data));
-            Debug.LogFormat("Shape: {0}", string.Join(",", Shape));
-            Debug.LogFormat("Strides: {0}", string.Join(",", Strides));
+            //Debug.LogFormat("Shape: {0}", string.Join(",", Shape));
+            //Debug.LogFormat("Strides: {0}", string.Join(",", Strides));
 
             if( data != null )
                 dataBuffer.SetData(Data);
