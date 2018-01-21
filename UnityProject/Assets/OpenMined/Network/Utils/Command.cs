@@ -23,7 +23,8 @@ namespace OpenMined.Network.Utils
 		public string[] tensorIndexParams;
 		public string[] hyperParams;
 
-        //grid
+        // grid
         public List<GridConfiguration> configurations;
+        public string experimentId;
 	}
 }

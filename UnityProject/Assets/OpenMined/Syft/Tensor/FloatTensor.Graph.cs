@@ -40,6 +40,12 @@ namespace OpenMined.Syft.Tensor
 		    	children_counts[i] = 0;
 	    }
 
+	    public void RemoveChild(int tensorId)
+	    {
+	        bool deleted = this.children_indices.Remove(tensorId);
+	        if(deleted) this.children_counts.RemoveAt(0);
+	    }
+
 	    public FloatTensor HookGraph(ref FloatTensor result, 
 		    						string creation_op, 
 		    						bool inline, 
@@ -168,7 +174,6 @@ namespace OpenMined.Syft.Tensor
 				result.InitGraph();
 				result.creators.Add(this.id);
 				result.creation_op = creation_op;
-				
 				children_indices.Add(result.Id);
 				children_counts.Add(0);
 				

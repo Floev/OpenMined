@@ -32,7 +32,7 @@ namespace OpenMined.Syft.Layer
 
         private int getLayer(int i)
         {
-            if(i > 0 && i < layers.Count)
+            if(i >= 0 && i < layers.Count)
                 return layers[i];
             throw new ArgumentOutOfRangeException("Sub-layer " + i + " does not exist.");
         }
@@ -131,6 +131,21 @@ namespace OpenMined.Syft.Layer
                 cnt += controller.getModel(layer_idx).getParameterCount();
             }
             return cnt;
+        }
+
+        public override List<int> getParameters()
+        {
+            var allParams = new List<int>();
+            foreach (int layer_idx in layers)
+            {
+                var model = controller.getModel(layer_idx);
+                foreach (int param in model.getParameters())
+                {
+                    allParams.Add(param);
+                }
+            }
+
+            return allParams;
         }
 
         public JToken GetConfig()

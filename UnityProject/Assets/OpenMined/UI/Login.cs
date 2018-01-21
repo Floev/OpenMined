@@ -1,12 +1,15 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System;
 using System.Collections;
+using System.IO;
 
 using ZXing;
 using ZXing.QrCode;
 
 using OpenMined.Network.Servers;
+
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace OpenMined.UI
 {
@@ -37,20 +40,33 @@ namespace OpenMined.UI
             return encoded;
         }
 
-        //private IEnumerator Start()
-        //{
-        //    Debug.Log("Login OnGUI()");
+        private IEnumerator Start()
+        {
+            var o = ReadConfig();
             
-        //    Request r = new Request();
+            if ((bool)o["identify"])
+            {
+                Debug.Log("Login OnGUI()");
+            
+                Request r = new Request();
 
-        //    Request req = new Request(this, r.GetIdentity(""));
-        //    yield return req.Coroutine;
-        //    string URI = req.result as string;
-        //    Debug.LogFormat("\nURI: {0}", URI);
+                Request req = new Request(this, r.IdentityRequest());
+                yield return req.Coroutine;
+                string URI = req.result as string;
+                Debug.LogFormat("\nURI: {0}", URI);
 
-        //    Texture2D qrTexture = GenerateQR(URI);
-        //    Sprite qrSprite = Sprite.Create(qrTexture, new Rect(0.0f, 0.0f, 256, 256), new Vector2(0.5f, 0.5f), 100.0f);
-        //    loginButton.image.sprite = qrSprite;
-        //}
+                Texture2D qrTexture = GenerateQR(URI);
+                Sprite qrSprite = Sprite.Create(qrTexture, new Rect(0.0f, 0.0f, 256, 256), new Vector2(0.5f, 0.5f), 100.0f);
+                loginButton.image.sprite = qrSprite;
+            }
+        }
+        
+        JObject ReadConfig()
+        {
+            using (StreamReader reader = File.OpenText("Assets/OpenMined/Config/config.json"))
+            {
+                return (JObject)JToken.ReadFrom(new JsonTextReader(reader));
+            }
+        }
     }
 }

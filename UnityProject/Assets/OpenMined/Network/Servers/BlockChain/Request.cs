@@ -28,7 +28,7 @@ namespace OpenMined.Network.Servers
         
         public class GetModelResponse
         {
-            public String address = "";
+            public String owner = "";
             public Int32 bounty;
             public Int32 initialError;
             public Int32 targetError;
@@ -44,7 +44,7 @@ namespace OpenMined.Network.Servers
                 hexAddress = new List<String>();
                 types = new List<Type>
                 {
-                    address.GetType(),
+                    owner.GetType(),
                     bounty.GetType(),
                     initialError.GetType(),
                     targetError.GetType(),
@@ -53,7 +53,7 @@ namespace OpenMined.Network.Servers
 
                 var objects = EthereumAbiUtil.GetParametersHex(hexString, numParameters, types);
 
-                address = (String)objects[0];
+                owner = (String)objects[0];
                 bounty = (Int32)objects[1];
                 initialError = (Int32)objects[2];
                 targetError = (Int32)objects[3];
@@ -101,17 +101,24 @@ namespace OpenMined.Network.Servers
             }
         }
 
-        public IEnumerator GetIdentity(string method,
-                                              string modelAddress = "")
+        public IEnumerator IdentityRequest(string method = "", int modelId = 0, string address = "")
         {
             string URL = identityURL;
-            
-            if(method.Length > 0)
-            {
-                var model = WWW.EscapeURL(modelAddress);
-                URL += "/" + method + "?model=" + model;
-            }
 
+            if (method.Length > 0)
+            {
+                URL += "/" + method;
+                if (method == "addWeights")
+                {
+                    
+                    URL += "?model=" + modelId + "&weights=:" + address;
+                }
+                else if (method == "addModel")
+                {
+                    URL += "?model=" + address;
+                }
+            }
+        
             Debug.LogFormat("Request.GetIdentity {0}", URL);
             UnityWebRequest www = UnityWebRequest.Get(URL);
             www.SetRequestHeader("accept", "text/plain");
@@ -204,18 +211,44 @@ namespace OpenMined.Network.Servers
             Call response = req.result as Call;
 
             modelResponse = new GetModelResponse(response.result);
+        }
 
-            Debug.LogFormat("Model {0}, {1}. {2}, {3}, {4}", modelResponse.address, 
-                            modelResponse.bounty, modelResponse.initialError, modelResponse.targetError, 
-                            modelResponse.configAddress);
+        public IEnumerator GetNumModelGrads(MonoBehaviour owner, int modelId)
+        {
+            var keccak = new Sha3Keccak();
+            var d = keccak.CalculateHash("getNumGradientsforModel(uint256)");
+            d = d.Substring(0, 8);
+            
+            var value = EthereumAbiUtil.EncodeInt32(modelId);
+
+            string data = EncodeData("0x" + d + value);
+            
+            Request req = new Request(owner, Get<Call>("eth_call", data));
+            yield return req.Coroutine;
+
+            Call response = req.result as Call;
+            
+            var numGrads = (int)new System.ComponentModel.Int32Converter().ConvertFromString(response.result);
+            Debug.LogFormat("\nNum Models Grads: {0}", numGrads.ToString("N"));
         }
 
         public IEnumerator AddModel(MonoBehaviour owner, string ipfsHash)
         {
-            Request req = new Request(owner, GetIdentity("addModel", ipfsHash));
+            Request req = new Request(owner, IdentityRequest("addModel", 0, ipfsHash));
             yield return req.Coroutine;
 
             Debug.LogFormat("response {0}", req.result);
+        }
+
+        public IEnumerator AddWeights(MonoBehaviour owner, int modelId, string ipfsHash)
+        {
+            Debug.Log("ADDING WEIGHTS");
+
+            Request req = new Request(owner, IdentityRequest("addWeights", modelId, ipfsHash));
+
+            yield return req.Coroutine;
+            
+            Debug.LogFormat("add weights response {0}", req.result);
         }
     }
 }

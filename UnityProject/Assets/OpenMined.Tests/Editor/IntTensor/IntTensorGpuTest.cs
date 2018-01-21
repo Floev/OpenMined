@@ -41,6 +41,27 @@ namespace OpenMined.Tests.Editor.IntTensorTests
             AssertEqualTensorsData(t1, t2, .0001f);
         }
 
+        public void AssertEqualTensorsData(OpenMined.Syft.Tensor.FloatTensor t1, OpenMined.Syft.Tensor.FloatTensor t2, double delta = 0.0d)
+        {
+            float[] data1 = new float[t1.Size];
+            t1.DataBuffer.GetData(data1);
+            float[] data2 = new float[t2.Size];
+            t2.DataBuffer.GetData(data2);
+            Assert.AreEqual(t1.DataBuffer.count, t2.DataBuffer.count);
+            Assert.AreEqual(t1.DataBuffer.stride, t2.DataBuffer.stride);
+            Assert.AreNotEqual(t1.DataBuffer.GetNativeBufferPtr(), t2.DataBuffer.GetNativeBufferPtr());
+            for (var i = 0; i < data1.Length; ++i)
+            {
+                //Debug.LogFormat("Asserting {0} equals {1} with accuracy {2} where diff is {3}", data1[i], data2[i], delta, data1[i] - data2[i]);
+                Assert.AreEqual(data1[i], data2[i], delta);
+            }
+        }
+
+        public void AssertApproximatelyEqualTensorsData(OpenMined.Syft.Tensor.FloatTensor t1, OpenMined.Syft.Tensor.FloatTensor t2)
+        {
+            AssertEqualTensorsData(t1, t2, .0001f);
+        }
+
         [OneTimeSetUp]
         public void Init()
         {
@@ -235,6 +256,78 @@ namespace OpenMined.Tests.Editor.IntTensorTests
 			AssertEqualTensorsData(expectedTensor1, tensor1);
 		}
 
-/* closes class and namespace */
+        [Test]
+        public void Reciprocal()
+        {
+            int[] data1 = { 1, 2, 3, -1 };
+            int[] shape1 = { 4 };
+            var tensor1 = ctrl.intTensorFactory.Create(_data: data1, _shape: shape1);
+            tensor1.Gpu(shader);
+
+            int[] data2 = { 1, 0, 0, -1 };
+            int[] shape2 = { 4 };
+            var expectedTensor = ctrl.intTensorFactory.Create(_data: data2, _shape: shape2);
+            expectedTensor.Gpu(shader);
+
+            var reciprocalTensor = tensor1.Reciprocal();
+
+            AssertEqualTensorsData(expectedTensor, reciprocalTensor);
+        }
+
+        [Test]
+        public void Reciprocal_()
+        {
+            int[] data1 = { 1, 2, 3, -1 };
+            int[] shape1 = { 4 };
+            var tensor1 = ctrl.intTensorFactory.Create(_data: data1, _shape: shape1);
+            tensor1.Gpu(shader);
+
+            int[] data2 = { 1, 0, 0, -1 };
+            int[] shape2 = { 4 };
+            var expectedTensor = ctrl.intTensorFactory.Create(_data: data2, _shape: shape2);
+            expectedTensor.Gpu(shader);
+
+            tensor1.Reciprocal(inline: true);
+
+            AssertEqualTensorsData(expectedTensor, tensor1);
+        }
+
+        [Test]
+        public void Sin()
+        {
+            int[] data1 = { 15, 60, 90, 180 };
+            int[] shape1 = { 4 };
+            var tensor1 = ctrl.intTensorFactory.Create(_data: data1, _shape: shape1);
+            tensor1.Gpu(shader);
+
+            float[] data2 = { 0.65028784f, -0.30481062f, 0.89399666f, -0.80115264f };
+            int[] shape2 = { 4 };
+            var expectedSinTensor = ctrl.floatTensorFactory.Create(_data: data2, _shape: shape2);
+            expectedSinTensor.Gpu(shader);
+
+            var actualSinTensor = tensor1.Sin();
+
+            AssertApproximatelyEqualTensorsData(expectedSinTensor, actualSinTensor);
+        }
+
+        [Test]
+        public void Cos()
+        {
+            int[] data1 = { 30, 60, 90, 180 };
+            int[] shape1 = { 4 };
+            var tensor1 = ctrl.intTensorFactory.Create(_data: data1, _shape: shape1);
+            tensor1.Gpu(shader);
+
+            float[] data2 = { 0.1542515f, -0.952413f, -0.4480736f, -0.5984601f };
+            int[] shape2 = { 4 };
+            var expectedCosTensor = ctrl.floatTensorFactory.Create(_data: data2, _shape: shape2);
+            expectedCosTensor.Gpu(shader);
+
+            var actualCosTensor = tensor1.Cos();
+
+            AssertApproximatelyEqualTensorsData(expectedCosTensor, actualCosTensor);
+        }
+
+        /* closes class and namespace */
     }
 }
