@@ -4,6 +4,8 @@ using UnityEngine.Networking;
 using System;
 using OpenMined.Syft.Tensor;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 using OpenMined.Network.Controllers;
 
@@ -17,7 +19,7 @@ namespace OpenMined.Network.Servers
 
         public IpfsResponse Write<T>(T data)
         {
-            var serializedData = JsonUtility.ToJson(data);
+            var serializedData = JsonConvert.SerializeObject(data);
             Debug.Log(serializedData);
 
             /**
@@ -55,7 +57,7 @@ namespace OpenMined.Network.Servers
             }    
         }
 
-        public static FloatTensor Get (string path)
+        public static T Get<T>(string path) where T: class
         {
             var www = UnityWebRequest.Get(GET_URL + "/" + path);
             var op = www.SendWebRequest();
@@ -72,30 +74,7 @@ namespace OpenMined.Network.Servers
             else
             {
                 var json = www.downloadHandler.text;
-                var tensor = JsonUtility.FromJson<FloatTensor>(json);
-
-                return tensor;
-            }
-        }
-
-        public static IpfsModel GetModel(string path)
-        {
-            var www = UnityWebRequest.Get(GET_URL + "/" + path);
-            var op = www.SendWebRequest();
-            while (!op.isDone)
-            {
-                // wait for operation to finish
-            }
-
-            if (www.isHttpError || www.isNetworkError)
-            {
-                Debug.Log("Error getting IPFS data: " + www.error);
-                return null;
-            }
-            else
-            {
-                var json = www.downloadHandler.text;
-                return JsonUtility.FromJson<IpfsModel>(json);
+                return JsonConvert.DeserializeObject<T>(json);
             }
         }
 

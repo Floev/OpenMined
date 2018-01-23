@@ -1,3 +1,5 @@
 {
-  "trainer": false
+  "trainer": false,
+  "identify": false,
+  "bygoneServer": "localhost"
 }

@@ -13,41 +13,76 @@ namespace OpenMined.Syft.Layer
 		private int _output;
 
         [SerializeField] string name = "linear";
-        [SerializeField] public readonly FloatTensor _weights;
+        [SerializeField] public FloatTensor _weights;
         [SerializeField] FloatTensor _bias;
-		
-		public Linear (SyftController _controller, int input, int output, string initializer="Xavier")
+        private bool _biased;
+
+        public Linear (SyftController _controller, int input, int output, string initializer="Xavier",
+            bool biased = false, float[] weights = null, float[] bias = null)
 		{
-            init(this.name);
+            init(name);
 
 			this.controller = _controller;
 			
 			_input = input;
 			_output = output;
-			
-			int[] weightShape = { input, output };
-            var weights = initializer == "Xavier" ? controller.RandomWeights(input * output, input) : controller.RandomWeights(input * output);
-			_weights = controller.floatTensorFactory.Create(_shape: weightShape, _data: weights, _autograd: true, _keepgrads: true);
 
-			int[] biasShape = {1,output};
-			_bias = controller.floatTensorFactory.Create(_shape:biasShape, _autograd: true);
+            _biased = biased || bias != null;
 
-			parameters.Add(_weights.Id);
-			parameters.Add(_bias.Id);
-			
-			#pragma warning disable 420
-			id = System.Threading.Interlocked.Increment(ref nCreated);
-			controller.addModel(this);
+            int[] weightShape = { input, output };
+            if (weights == null)
+            {
+                weights = initializer == "Xavier" ? controller.RandomWeights(input * output, input) : controller.RandomWeights(input * output);
+            };
+            _weights = controller.floatTensorFactory.Create(_shape: weightShape, _data: weights, _autograd: true, _keepgrads: true);
 
-		}
+            parameters.Add(_weights.Id);
+
+            if (_biased)
+            {
+                int[] biasShape = { 1, output };
+                _bias = controller.floatTensorFactory.Create(_data: bias, _shape: biasShape, _autograd: true);
+                parameters.Add(_bias.Id);
+            };
+
+            #pragma warning disable 420
+            id = System.Threading.Interlocked.Increment(ref nCreated);
+            controller.addModel(this);
+        }
+
+        public Linear (SyftController _controller, int input, int output, FloatTensor weights, FloatTensor bias = null, string initializer="Xavier")
+        {
+            init(this.name);
+
+            this.controller = _controller;
+
+            _input = input;
+            _output = output;
+
+            _weights = weights;
+            _bias = bias;
+
+            parameters.Add(_weights.Id);
+
+            if (_bias != null)
+            {
+                parameters.Add(_bias.Id);
+            }
+
+            #pragma warning disable 420
+            id = System.Threading.Interlocked.Increment(ref nCreated);
+            controller.addModel(this);
+        }
 
         public override FloatTensor Forward(FloatTensor input)
 		{
 			
-			FloatTensor unbiased_output = input.MM(_weights);
-			FloatTensor output = unbiased_output.Add(_bias.Expand(unbiased_output.Shape).Contiguous());
-			
-			activation = output.Id;
+			FloatTensor output = input.MM(_weights);
+            if (_biased)
+            {
+                output = output.Add(_bias.Expand(output.Shape).Contiguous());
+            };
+            activation = output.Id;
 		
 			return output;
 		}
@@ -57,9 +92,12 @@ namespace OpenMined.Syft.Layer
             return JsonUtility.ToJson(this);
         }
 
-		public override int getParameterCount(){return _weights.Size + _bias.Size;}
+        public override int getParameterCount()
+        {
+            return _biased ? _weights.Size + _bias.Size : _weights.Size;
+        }
 
-	   	public override JToken GetConfig()
+        public override JToken GetConfig()
         {
 		    var config = new JObject
 			{
@@ -68,6 +106,8 @@ namespace OpenMined.Syft.Layer
 				{ "dtype", "float32" }, 
 				{ "output", _output },
                 { "input", _input },
+                { "bias", _bias?.GetConfig() },
+                { "weights", _weights?.GetConfig() },
 				{ "activation", "linear" },
 				{ "use_bias", true },
 				{

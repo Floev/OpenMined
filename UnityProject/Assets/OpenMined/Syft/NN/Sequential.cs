@@ -32,7 +32,7 @@ namespace OpenMined.Syft.Layer
 
         private int getLayer(int i)
         {
-            if(i > 0 && i < layers.Count)
+            if(i >= 0 && i < layers.Count)
                 return layers[i];
             throw new ArgumentOutOfRangeException("Sub-layer " + i + " does not exist.");
         }
@@ -52,7 +52,7 @@ namespace OpenMined.Syft.Layer
             for (int i = 0; i < this.layers.Count; i++)
             {
                 int layerIdx = this.layers [i];
-                Layer layer = (Layer)controller.getModel (layerIdx);
+                Layer layer = (Layer)controller.GetModel (layerIdx);
 
                 input = layer.Forward(input);
             }
@@ -66,7 +66,7 @@ namespace OpenMined.Syft.Layer
 
             for (int i = 0; i < this.layers.Count; i++)
             {
-                List<int> layer_params = controller.getModel(layers[i]).getParameters();
+                List<int> layer_params = controller.GetModel(layers[i]).getParameters();
                 for (int j = 0; j < layer_params.Count; j++)
                 {
                     out_str += layer_params[j].ToString() + ",";
@@ -89,7 +89,7 @@ namespace OpenMined.Syft.Layer
                 case "add":
                 {
                     // TODO: Handle adding layers better
-                    var input = (Layer)ctrl.getModel(int.Parse(msgObj.tensorIndexParams[0]));
+                    var input = (Layer)ctrl.GetModel(int.Parse(msgObj.tensorIndexParams[0]));
                     Debug.LogFormat("<color=magenta>Layer Added to Sequential:</color> {0}", input.Id);                    
                     this.AddLayer(input);
                     return input.Id + "";
@@ -128,19 +128,34 @@ namespace OpenMined.Syft.Layer
             int cnt = 0;
             foreach (int layer_idx in layers)
             {
-                cnt += controller.getModel(layer_idx).getParameterCount();
+                cnt += controller.GetModel(layer_idx).getParameterCount();
             }
             return cnt;
         }
 
-        public JToken GetConfig()
+        public override List<int> getParameters()
+        {
+            var allParams = new List<int>();
+            foreach (int layer_idx in layers)
+            {
+                var model = controller.GetModel(layer_idx);
+                foreach (int param in model.getParameters())
+                {
+                    allParams.Add(param);
+                }
+            }
+
+            return allParams;
+        }
+
+        public override JToken GetConfig()
         {
             var _this = this;
             
             var layer_list = new JArray();
             for (int i = 0; i < this.layers.Count; i++)
             {   
-                var layer = controller.getModel(this.layers[i]);
+                var layer = controller.GetModel(this.layers[i]);
                 layer_list.Add(
                     new JObject
                     {

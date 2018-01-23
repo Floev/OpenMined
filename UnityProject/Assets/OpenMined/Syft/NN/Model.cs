@@ -42,12 +42,12 @@ namespace OpenMined.Syft.Layer
         
         public int getParameter(int i)
         {
-            if(i > 0 && i < parameters.Count) 
+            if(i >= 0 && i < parameters.Count) 
                 return parameters[i];
             throw new ArgumentOutOfRangeException("Parameter " + i + " does not exist.");
         }
         
-        public List<int> getParameters()
+        public virtual List<int> getParameters()
         {
             return parameters;
         }

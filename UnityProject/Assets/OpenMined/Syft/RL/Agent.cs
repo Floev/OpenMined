@@ -13,7 +13,7 @@ namespace OpenMined.Syft.NN.RL
     public class Agent
     {
         
-        protected static volatile int nCreated = 0;
+        protected static volatile int nCreated;
         
         // unique identifier held by SyftController
         protected int id;
@@ -22,12 +22,12 @@ namespace OpenMined.Syft.NN.RL
         private Layer.Layer model;
         private List<FloatTensor[]> history;
         private Optimizer optimizer;
-        private SyftController controller;
-        
-        
-        
+        private readonly SyftController controller;
+
+
+
         //private List<float> mean 
-        
+
         public Agent(SyftController _controller, Layer.Layer _model, Optimizer _optimizer)
         {
             controller = _controller;
@@ -36,7 +36,7 @@ namespace OpenMined.Syft.NN.RL
             
             #pragma warning disable 420
             id = System.Threading.Interlocked.Increment(ref nCreated);
-            controller.addAgent(this);
+            controller.AddAgent(this);
 
             history = new List<FloatTensor[]>();
 
@@ -117,7 +117,7 @@ namespace OpenMined.Syft.NN.RL
                 case "deploy":
                 {
                     // 1234 is a special id that Unit watches for
-                    controller.setAgentId(id,1234);
+                    controller.SetAgentId(id,1234);
                     return "1234";
                 }
                 case "get_history":

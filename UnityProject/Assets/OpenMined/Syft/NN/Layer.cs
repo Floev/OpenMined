@@ -173,8 +173,8 @@ namespace OpenMined.Syft.Layer
                 {
                     FloatTensor input = ctrl.floatTensorFactory.Get(int.Parse(msgObj.tensorIndexParams[0]));
                     FloatTensor target = ctrl.floatTensorFactory.Get(int.Parse(msgObj.tensorIndexParams[1]));
-                    Loss.Loss criterion = ctrl.getLoss(int.Parse(msgObj.tensorIndexParams[2]));
-                    Optimizer optim = ctrl.getOptimizer(int.Parse(msgObj.tensorIndexParams[3]));
+                    Loss.Loss criterion = ctrl.GetLoss(int.Parse(msgObj.tensorIndexParams[2]));
+                    Optimizer optim = ctrl.GetOptimizer(int.Parse(msgObj.tensorIndexParams[3]));
                     int batch_size = int.Parse(msgObj.tensorIndexParams[4]);
                     
                     return PrepareToFit(input,target,criterion,optim,batch_size).ToString();
@@ -192,7 +192,7 @@ namespace OpenMined.Syft.Layer
                 {
                     FloatTensor test_input = ctrl.floatTensorFactory.Get(int.Parse(msgObj.tensorIndexParams[0]));
                     FloatTensor test_target = ctrl.floatTensorFactory.Get(int.Parse(msgObj.tensorIndexParams[1]));
-                    Loss.Loss criterion = ctrl.getLoss(int.Parse(msgObj.tensorIndexParams[2]));
+                    Loss.Loss criterion = ctrl.GetLoss(int.Parse(msgObj.tensorIndexParams[2]));
                     int batch_size = int.Parse(msgObj.tensorIndexParams[3]);
                     return Evaluate(test_input, test_target, criterion, batch_size);
                 }

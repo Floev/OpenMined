@@ -38,13 +38,13 @@ namespace OpenMined.UI
 
         public void ClearText()
         {
-            logText.text = "";
+            //logText.text = "";
         }
 
         public void SetText(string text)
         {
             //UnityEngine.Debug.LogFormat(text);
-            logText.text += text + "\n";
+            //logText.text += text + "\n";
         }
 
         public static void LogFormat(string format, params object[] args)

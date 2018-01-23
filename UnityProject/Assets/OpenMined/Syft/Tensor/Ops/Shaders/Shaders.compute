@@ -12,11 +12,7 @@ RWStructuredBuffer<float> AbsResult;
 
 [numthreads(4,1,1)]
 void Abs (uint3 id : SV_DispatchThreadID) {
-	if(AbsData[id.x] < 0) {
-		AbsResult[id.x] = -AbsData[id.x];
-	} else {
-		AbsResult[id.x] = AbsData[id.x];
-	}
+	AbsResult[id.x] = abs(AbsData[id.x]);
 }
 
 #pragma kernel Abs_
@@ -194,6 +190,34 @@ void AddMM_ (uint3 id : SV_DispatchThreadID) {
 	}
 }
 
+#pragma kernel AddMMT_
+
+RWStructuredBuffer<float> AddmmtDataA_;
+StructuredBuffer<float> AddmmtDataB_;
+StructuredBuffer<float> AddmmtDataC_;
+StructuredBuffer<int> AddmmtDimensionsM_;
+StructuredBuffer<int> AddmmtDimensionsN_;
+StructuredBuffer<int> AddmmtDimensionsO_;
+
+[numthreads(4,1,1)]
+void AddMMT_ (uint3 id : SV_DispatchThreadID) {
+
+	int M = AddmmtDimensionsM_[0];
+	int N = AddmmtDimensionsN_[0];
+	int O = AddmmtDimensionsO_[0];
+
+	int j = id % O;
+	int i = (id - j) / M;
+	int Bid = i * N;
+	int Cid = j * N;
+	for (int l = 0; l < N; l++)
+	{
+		AddmmtDataA_[id.x] += AddmmtDataB_[Bid] * AddmmtDataC_[Cid];
+		Bid += 1;
+		Cid += 1;
+	}
+}
+
 #pragma kernel AddMV_
 
 StructuredBuffer<int> AddMVRefShape_;
@@ -252,6 +276,15 @@ RWStructuredBuffer<float> CosData_;
 [numthreads(4,1,1)]
 void Cos_ (uint3 id: SV_DispatchThreadID) {
     CosData_[id.x] = cos(CosData_[id.x]);
+}
+
+#pragma kernel CosInt
+StructuredBuffer<int> CosIntData;
+RWStructuredBuffer<float> CosIntDataResult;
+
+[numthreads(4,1,1)]
+void CosInt(uint3 id: SV_DispatchThreadID) {
+	CosIntDataResult[id.x] = (float)cos(CosIntData[id.x]);
 }
 
  #pragma kernel Cosh
@@ -575,6 +608,25 @@ void Reciprocal_ (uint3 id: SV_DispatchThreadID) {
     ReciprocalData_[id.x] = 1 / ReciprocalData_[id.x];
 }
 
+#pragma kernel ReciprocalInt
+
+StructuredBuffer<int> ReciprocalIntData;
+RWStructuredBuffer<int> ReciprocalIntDataResult;
+
+[numthreads(4,1,1)]
+void ReciprocalInt(uint3 id: SV_DispatchThreadID) {
+	ReciprocalIntDataResult[id.x] = (int)(1 / ReciprocalIntData[id.x]);
+}
+
+#pragma kernel ReciprocalInt_
+
+RWStructuredBuffer<int> ReciprocalIntData_;
+
+[numthreads(4,1,1)]
+void ReciprocalInt_(uint3 id: SV_DispatchThreadID) {
+	ReciprocalIntData_[id.x] = (int)(1 / ReciprocalIntData_[id.x]);
+}
+
 #pragma kernel RemainderElem_
 
 RWStructuredBuffer<float> RemainderElemDataA_;
@@ -712,6 +764,16 @@ void Sin_ (uint3 id: SV_DispatchThreadID) {
     SinData_[id.x] = sin(SinData_[id.x]);
 }
 
+#pragma kernel SinInt
+
+StructuredBuffer<int> SinIntData;
+RWStructuredBuffer<float> SinIntDataResult;
+
+[numthreads(4,1,1)]
+void SinInt(uint3 id: SV_DispatchThreadID) {
+	SinIntDataResult[id.x] = (float)sin(SinIntData[id.x]);
+}
+
 #pragma kernel Sqrt
 
 StructuredBuffer<float> SqrtData;
@@ -839,6 +901,34 @@ RWStructuredBuffer<float> SinhData_;
 [numthreads(4,1,1)]
 void Sinh_ (uint3 id: SV_DispatchThreadID) {
     SinhData_[id.x] = sinh(SinhData_[id.x]);
+}
+
+#pragma kernel Transpose
+
+StructuredBuffer<int> TransposeDims;
+StructuredBuffer<int> TransposeDim1;
+StructuredBuffer<int> TransposeDim2;
+StructuredBuffer<float> TransposeData;
+StructuredBuffer<int> TransposeShape;
+StructuredBuffer<int> TransposeStrides;
+RWStructuredBuffer<float> TransposeResult;
+
+[numthreads(4,1,1)]
+void Transpose (uint3 id: SV_DispatchThreadID) {
+	int indices[10];
+	int idx = id.x;
+	for (int i = 0; i < TransposeDims[0]; i++) {
+		indices[i] = (idx - (idx % (TransposeStrides[i]))) / TransposeStrides[i];
+		idx -= indices[i] * TransposeStrides[i];
+	}
+	int tmp = indices[TransposeDim1[0]];
+	indices[TransposeDim1[0]] = indices[TransposeDim2[0]];
+	indices[TransposeDim2[0]] = tmp;
+	int offset = 0;
+	for (int i = 0; i < TransposeDims[0]; i++) {
+		offset += indices[i] * TransposeStrides[i];
+	}
+	TransposeResult[id.x] = TransposeData[offset];
 }
 
 #pragma kernel Triu_
