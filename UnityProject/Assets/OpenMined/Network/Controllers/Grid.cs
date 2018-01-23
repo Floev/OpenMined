@@ -119,18 +119,16 @@ namespace OpenMined.Network.Controllers
                     case "Linear":
                         // weight float tensor
                         var weightData = layer.SelectToken("config.weights.data").ToObject<float[]>();
-                        var weightShape = layer.SelectToken("config.weights.shape").ToObject<int[]>();
-                        var weightTensor = controller.floatTensorFactory.Create(_data: weightData, _shape: weightShape, _autograd: true);
+//                        var weightShape = layer.SelectToken("config.weights.shape").ToObject<int[]>();
 
                         // bias float tensor
                         var biasData = layer.SelectToken("config.bias.data").ToObject<float[]>();
-                        var biasShape = layer.SelectToken("config.bias.shape").ToObject<int[]>();
-                        var biasTensor = controller.floatTensorFactory.Create(_data: biasData, _shape: biasShape, _autograd: true);
+//                        var biasShape = layer.SelectToken("config.bias.shape").ToObject<int[]>();
 
                         var input = layer.SelectToken("config.input").ToObject<int>();
                         var output = layer.SelectToken("config.output").ToObject<int>();
 
-                        var linear = new Linear(controller, input: input, output: output, weights: weightTensor, bias: biasTensor);
+                        var linear = new Linear(controller, input: input, output: output, weights: weightData, bias: biasData);
                         seq.AddLayer(linear);
                         break;
                     case "ReLU":

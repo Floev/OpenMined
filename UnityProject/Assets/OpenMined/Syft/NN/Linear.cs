@@ -23,7 +23,6 @@ namespace OpenMined.Syft.Layer
         {
             init(name);
 
-
 			this.controller = _controller;
 
             _input = fast ? output : input;
@@ -58,28 +57,6 @@ namespace OpenMined.Syft.Layer
                 _bias = controller.floatTensorFactory.Create(_data: bias, _shape: biasShape, _autograd: true);
                 parameters.Add(_bias.Id);
             };
-
-
-
-            #pragma warning disable 420
-            id = System.Threading.Interlocked.Increment(ref nCreated);
-            controller.addModel(this);
-        }
-
-        public Linear (SyftController _controller, int input, int output, FloatTensor weights, FloatTensor bias, string initializer="Xavier")
-        {
-            init(this.name);
-
-            this.controller = _controller;
-
-            _input = input;
-            _output = output;
-
-            _weights = weights;
-            _bias = bias;
-
-            parameters.Add(_weights.Id);
-            parameters.Add(_bias.Id);
 
             #pragma warning disable 420
             id = System.Threading.Interlocked.Increment(ref nCreated);
@@ -155,7 +132,6 @@ namespace OpenMined.Syft.Layer
 
 				return config;
 		}
-
 	}
 }
 
