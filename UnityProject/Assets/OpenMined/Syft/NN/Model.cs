@@ -47,7 +47,7 @@ namespace OpenMined.Syft.Layer
             throw new ArgumentOutOfRangeException("Parameter " + i + " does not exist.");
         }
         
-        public List<int> getParameters()
+        public virtual List<int> getParameters()
         {
             return parameters;
         }

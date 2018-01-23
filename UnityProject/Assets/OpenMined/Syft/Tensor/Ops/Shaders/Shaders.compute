@@ -278,6 +278,15 @@ void Cos_ (uint3 id: SV_DispatchThreadID) {
     CosData_[id.x] = cos(CosData_[id.x]);
 }
 
+#pragma kernel CosInt
+StructuredBuffer<int> CosIntData;
+RWStructuredBuffer<float> CosIntDataResult;
+
+[numthreads(4,1,1)]
+void CosInt(uint3 id: SV_DispatchThreadID) {
+	CosIntDataResult[id.x] = (float)cos(CosIntData[id.x]);
+}
+
  #pragma kernel Cosh
 
 StructuredBuffer<float> CoshData;
@@ -599,6 +608,25 @@ void Reciprocal_ (uint3 id: SV_DispatchThreadID) {
     ReciprocalData_[id.x] = 1 / ReciprocalData_[id.x];
 }
 
+#pragma kernel ReciprocalInt
+
+StructuredBuffer<int> ReciprocalIntData;
+RWStructuredBuffer<int> ReciprocalIntDataResult;
+
+[numthreads(4,1,1)]
+void ReciprocalInt(uint3 id: SV_DispatchThreadID) {
+	ReciprocalIntDataResult[id.x] = (int)(1 / ReciprocalIntData[id.x]);
+}
+
+#pragma kernel ReciprocalInt_
+
+RWStructuredBuffer<int> ReciprocalIntData_;
+
+[numthreads(4,1,1)]
+void ReciprocalInt_(uint3 id: SV_DispatchThreadID) {
+	ReciprocalIntData_[id.x] = (int)(1 / ReciprocalIntData_[id.x]);
+}
+
 #pragma kernel RemainderElem_
 
 RWStructuredBuffer<float> RemainderElemDataA_;
@@ -734,6 +762,16 @@ RWStructuredBuffer<float> SinData_;
 [numthreads(4,1,1)]
 void Sin_ (uint3 id: SV_DispatchThreadID) {
     SinData_[id.x] = sin(SinData_[id.x]);
+}
+
+#pragma kernel SinInt
+
+StructuredBuffer<int> SinIntData;
+RWStructuredBuffer<float> SinIntDataResult;
+
+[numthreads(4,1,1)]
+void SinInt(uint3 id: SV_DispatchThreadID) {
+	SinIntDataResult[id.x] = (float)sin(SinIntData[id.x]);
 }
 
 #pragma kernel Sqrt

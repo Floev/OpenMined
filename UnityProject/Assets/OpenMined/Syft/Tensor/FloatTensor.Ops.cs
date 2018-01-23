@@ -602,10 +602,14 @@ namespace OpenMined.Syft.Tensor
         {
             // Lower the usage count by 1 when a tensor is deleted.
             this.Usage_count = this.Usage_count -1;
-
             // Only delete a tensor if it is just used once
             if (this.Usage_count < 1)
             {
+                // When you delete a tensor also remove it from the graph of its creator(s)
+                foreach(int creator_id in this.creators)
+                {
+                    factory.ctrl.floatTensorFactory.Get(creator_id).RemoveChild(this.Id);
+                }
                 factory.ctrl.floatTensorFactory.Delete(this.Id);
             }
         }
