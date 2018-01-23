@@ -5,6 +5,7 @@ using System.IO;
 using Newtonsoft.Json;
 using OpenMined.Network.Controllers;
 using OpenMined.Network.Servers.BlockChain.Requests;
+using OpenMined.Network.Servers.Ipfs;
 
 namespace OpenMined.Network.Servers.BlockChain
 {
@@ -45,7 +46,7 @@ namespace OpenMined.Network.Servers.BlockChain
                 yield return getJobRequest.RunRequest();
                 var jobHash = getJobRequest.GetResponse().jobAddress;
 
-                var job = Ipfs.Get<IpfsJob>(jobHash);
+                var job = Ipfs.Ipfs.Get<IpfsJob>(jobHash);
                 var controller = Camera.main.GetComponent<SyftServer>().controller;
                 var grid = new OpenMined.Network.Controllers.Grid(controller);
 

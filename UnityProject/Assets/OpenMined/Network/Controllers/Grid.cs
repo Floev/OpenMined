@@ -12,6 +12,9 @@ using OpenMined.UI;
 using OpenMined.Network.Servers.BlockChain;
 using System.Threading.Tasks;
 using OpenMined.Network.Servers.BlockChain.Requests;
+using OpenMined.Network.Servers.Ipfs;
+using OpenMined.Syft.Layer.Loss;
+using OpenMined.Syft.Optim;
 
 namespace OpenMined.Network.Controllers
 {
@@ -93,7 +96,8 @@ namespace OpenMined.Network.Controllers
                 var serializedModel = model.GetConfig();
 
                 var configJob = new Ipfs();
-                var ipfsJobConfig = new IpfsJobConfig(config.lr);
+                var ipfsJobConfig = new IpfsJobConfig(config.lr, config.criterion, config.iters);
+
                 var response = configJob.Write(new IpfsJob(inputIpfsResponse.Hash, targetIpfsResponse.Hash, serializedModel, ipfsJobConfig));
 
                 jobs[i] = response.Hash;
@@ -128,23 +132,41 @@ namespace OpenMined.Network.Controllers
             var grad = controller.floatTensorFactory.Create(_data: new float[] { 1, 1, 1, 1 }, 
                                                             _shape: new int[] { 4, 1 });
 
-            // 10 epochs .. make configurable
-            for (var i = 0; i < 10; ++i) {
+            Loss loss;
+
+            switch (job.config.criterion)
+            {
+                case "mseloss":
+                    loss = new MSELoss(this.controller);
+                    break;
+                case "categorical_crossentropy":
+                    loss = new CategoricalCrossEntropyLoss(this.controller);
+                    break;
+                case "cross_entropy_loss":
+                    loss = new CrossEntropyLoss(this.controller, 1); // TODO -- real value
+                    break;
+                case "nll_loss":
+                    loss = new NLLLoss(this.controller);
+                    break;
+                default:
+                    loss = new MSELoss(this.controller);
+                    break;
+            }
+
+            var optimizer = new SGD(this.controller, seq.getParameters(), job.config.lr, 0, 0);
+
+            for (var i = 0; i < job.config.iters; ++i) {
+
                 var pred = seq.Forward(inputTensor);
+                var l = loss.Forward(pred, targetTensor);
+                l.Backward();
 
-                var loss = pred.Sub(targetTensor).Pow(2);
-                loss.Backward(grad);
-
-                foreach (var p in seq.getParameters())
-                {
-                    var pTensor = controller.floatTensorFactory.Get(p);
-                    pTensor.Sub(pTensor.Grad, inline: true);
-                }
+                // TODO -- better batch size
+                optimizer.Step(100, i);
             }
 
             var resultJob = new Ipfs();
-            var config = new IpfsJobConfig(job.config.lr);
-            var response = resultJob.Write(new IpfsJob(job.input, job.target, seq.GetConfig(), config));
+            var response = resultJob.Write(new IpfsJob(job.input, job.target, seq.GetConfig(), job.config));
 
             return response.Hash;
         }
@@ -208,6 +230,7 @@ namespace OpenMined.Network.Controllers
         string GetLayerDefinition();
     }
 
+
     public class IpfsExperiment
     {
         public string[] jobs;
@@ -244,3 +267,4 @@ namespace OpenMined.Network.Controllers
         }
     }
 }
+
