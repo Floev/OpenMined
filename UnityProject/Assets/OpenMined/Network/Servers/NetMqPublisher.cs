@@ -1,31 +1,30 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Collections.Concurrent;
-
 using NetMQ;
 using NetMQ.Sockets;
-
+using System;
 using UnityEngine;
 
 namespace OpenMined.Network.Servers
 {
-	public class NetMqPublisher
-	{
-		private readonly Thread _listenerWorker;
 
-		private bool _listenerCancelled;
+    public interface NetMqDelegate
+    {
+        void ProcessMessage(string json_message, MonoBehaviour owner, Action<string> response);
+    }
 
-		public delegate string MessageDelegate (string message);
+    public class NetMqPublisher
+    {
+        private readonly Thread _listenerWorker;
+        private bool _listenerCancelled;
+        private NetMqDelegate _messageDelegate;
+        private MonoBehaviour owner;
+        private readonly Stopwatch _contactWatch;
+        private const long ContactThreshold = 1000;
+        public bool Connected;
 
-		private readonly MessageDelegate _messageDelegate;
-
-		private readonly Stopwatch _contactWatch;
-
-		private const long ContactThreshold = 1000;
-
-		public bool Connected;
-
-		private readonly ConcurrentQueue<Request> _requestQueue = new ConcurrentQueue<Request> ();
+        private readonly ConcurrentQueue<Request> _requestQueue = new ConcurrentQueue<Request>();
 
 		public struct Request
 		{
@@ -70,12 +69,13 @@ namespace OpenMined.Network.Servers
 			NetMQConfig.Cleanup ();
 		}
 
-		public NetMqPublisher (MessageDelegate messageDelegate)
+        public NetMqPublisher (NetMqDelegate messageDelegate, MonoBehaviour owner)
 		{
 			_messageDelegate = messageDelegate;
 			_contactWatch = new Stopwatch ();
 			_contactWatch.Start ();
 			_listenerWorker = new Thread (ListenerWork);
+            this.owner = owner;
 		}
 
 		public void Start ()
@@ -89,12 +89,10 @@ namespace OpenMined.Network.Servers
 			while (!_requestQueue.IsEmpty) {
 				Request request;
 				if (_requestQueue.TryDequeue (out request)) {
-					var response = _messageDelegate (request.message);
-
-					//UnityEngine.Debug.LogFormat("response: {0}", response);
-
-					request.router.SendMoreFrame (request.identity);
-					request.router.SendFrame (response);
+                    _messageDelegate.ProcessMessage(request.message, this.owner, (response) => {
+                        request.router.SendMoreFrame(request.identity);
+                        request.router.SendFrame(response);    
+                    });
 				} else {
 					break;
 				}

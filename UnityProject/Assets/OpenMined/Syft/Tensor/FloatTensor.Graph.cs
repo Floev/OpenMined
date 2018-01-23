@@ -46,6 +46,15 @@ namespace OpenMined.Syft.Tensor
 	        if(deleted) this.children_counts.RemoveAt(0);
 	    }
 
+	    public void RemoveAsCreator(int tensorId)
+	    {
+	        // Remove tensor as a creator for every child (useful when you delete the tensor)
+	        foreach(int child_id in this.children_indices)
+            {
+                factory.Get(child_id).creators.Remove(tensorId);
+            }
+	    }
+
 	    public FloatTensor HookGraph(ref FloatTensor result, 
 		    						string creation_op, 
 		    						bool inline, 

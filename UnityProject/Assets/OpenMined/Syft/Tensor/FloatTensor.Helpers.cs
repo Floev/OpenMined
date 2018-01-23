@@ -6,10 +6,7 @@ namespace OpenMined.Syft.Tensor
     public partial class FloatTensor
     {
         private bool SameSizeDimensionsShapeAndLocation(ref FloatTensor tensor)
-        {
-
-            bool use_backup = false;
-            
+        {            
             if (dataOnGpu != tensor.dataOnGpu)
             {
                 throw new InvalidOperationException(String.Format("Tensors must be on same device : {0} != {1}.", dataOnGpu, tensor.dataOnGpu));

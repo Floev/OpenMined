@@ -194,6 +194,48 @@ namespace OpenMined.Tests.Tensor.IntTensor
             }
         }
 
+        [Test]
+        public void Eq()
+        {
+            int[] data1 = { 1, 2, 3, 4 };
+            int[] shape = { 2, 2 };
+            var tensor1 = ctrl.intTensorFactory.Create(_data: data1, _shape: shape);
+
+            int[] data2 = { 1, 2, 1, 2 };
+            var tensor2 = ctrl.intTensorFactory.Create(_data: data2, _shape: shape);
+
+            int[] expectedData = { 1, 1, 0, 0 };
+            var expectedOutput = ctrl.intTensorFactory.Create(_data: expectedData, _shape: shape);
+
+            var eqOutput = tensor1.Eq(tensor2);
+
+            for (int i = 0; i < expectedOutput.Size; i++)
+            {
+                Assert.AreEqual(expectedOutput[i], eqOutput[i]);
+            }
+        }
+
+        [Test]
+        public void Eq_()
+        {
+            int[] data1 = { 1, 2, 3, 4 };
+            int[] shape = { 2, 2 };
+            var tensor1 = ctrl.intTensorFactory.Create(_data: data1, _shape: shape);
+
+            int[] data2 = { 1, 2, 1, 2 };
+            var tensor2 = ctrl.intTensorFactory.Create(_data: data2, _shape: shape);
+
+            int[] expectedData = { 1, 1, 0, 0 };
+            var expectedOutput = ctrl.intTensorFactory.Create(_data: expectedData, _shape: shape);
+
+            tensor1.Eq(tensor2, inline:true);
+
+            for (int i = 0; i < expectedOutput.Size; i++)
+            {
+                Assert.AreEqual(expectedOutput[i], tensor1[i]);
+            }
+        }
+
         public void Equal()
         {
             int[] data1 = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };

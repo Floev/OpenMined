@@ -97,8 +97,8 @@ namespace OpenMined.Syft.Layer
 				{ "dtype", "float32" }, 
 				{ "output", _output },
                 { "input", _input },
-                { "bias", _bias.GetConfig() },
-                { "weights", _weights.GetConfig() },
+                { "bias", _bias?.GetConfig() },
+                { "weights", _weights?.GetConfig() },
 				{ "activation", "linear" },
 				{ "use_bias", true },
 				{
@@ -134,4 +134,3 @@ namespace OpenMined.Syft.Layer
 		}
 	}
 }
-

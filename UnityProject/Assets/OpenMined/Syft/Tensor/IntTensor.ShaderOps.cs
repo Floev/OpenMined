@@ -14,11 +14,6 @@ namespace OpenMined.Syft.Tensor
         [SerializeField] private static int SinIntKernel;
         [SerializeField] private static int CosIntKernel;
 
-        public void initShaderKernels()
-        {
-            //TODO: This function should only be called once. These members are static!
-        }
-
         public IntTensor AddElemGPU(IntTensor tensor, IntTensor result)
         {
             int kernel_id = shader.FindKernel("AddElemInt");

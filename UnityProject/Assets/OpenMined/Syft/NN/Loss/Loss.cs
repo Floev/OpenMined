@@ -18,7 +18,7 @@ namespace OpenMined.Syft.Layer.Loss
             return result.Id + "";
         }
         
-        protected virtual string ProcessMessageAsLayerOrLoss (Command msgObj, SyftController ctrl)
+        protected override string ProcessMessageAsLayerOrLoss (Command msgObj, SyftController ctrl)
         {
             return ProcessMessageAsLoss(msgObj, ctrl);
         }

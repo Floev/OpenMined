@@ -11,11 +11,9 @@ namespace OpenMined.Syft.Tensor
 {
     public partial class IntTensor : BaseTensor<int>
     {
-        private List<int> creators;
         private string creation_op;
         public List<int> children_indices; // children -> counts
         public List<int> children_counts; // children -> counts
-        private int sibling;
 
         private IntTensorFactory factory;
 
@@ -25,7 +23,7 @@ namespace OpenMined.Syft.Tensor
             // factory.Create(all, my, params)
         }
 
-        public void init(IntTensorFactory _factory,
+        public void Init(IntTensorFactory _factory,
             int[] _shape,
             int[] _data = null,
             ComputeBuffer _dataBuffer = null,
@@ -34,8 +32,6 @@ namespace OpenMined.Syft.Tensor
             ComputeShader _shader = null,
             bool _copyData = true,
             bool _dataOnGpu = false,
-            bool _autograd = false,
-            bool _keepgrads = false,
             string _creation_op = null)
         {
 
@@ -84,7 +80,7 @@ namespace OpenMined.Syft.Tensor
                         shapeBuffer.SetData(shape);
 
                         InitGpu(_shader, _dataBuffer, _shapeBuffer, _stridesBuffer, _copyData);
-                        initShaderKernels();
+                        InitShaderKernels();
                     }
                     else
                     {
@@ -111,7 +107,7 @@ namespace OpenMined.Syft.Tensor
 
                         InitGpu(_shader: _shader, _dataBuffer: _dataBuffer, _shapeBuffer: _shapeBuffer, _stridesBuffer: _stridesBuffer,
                             _copyData: false);
-                        initShaderKernels();
+                        InitShaderKernels();
                         this.Zero_();
                     }
                     else
@@ -132,10 +128,21 @@ namespace OpenMined.Syft.Tensor
             if (SystemInfo.supportsComputeShaders && shader == null)
             {
                 shader = factory.GetShader();
-                initShaderKernels();
+                InitShaderKernels();
             }
         }
-        
+        public void InitShaderKernels()
+        {
+            //AddElemIntKernel = this.shader.FindKernel("AddElemInt");
+//            NegateKernel = this.shader.FindKernel("NegateInt");
+        }
+
+        public IntTensor Copy()
+        {
+            throw new NotImplementedException();
+        }
+
+ 
         public override string ProcessMessage(Command msgObj, SyftController ctrl)
         {
             switch (msgObj.functionCall)
@@ -187,6 +194,18 @@ namespace OpenMined.Syft.Tensor
                     Debug.LogFormat("add_scalar_");
                     this.Add(int.Parse(msgObj.tensorIndexParams[0]), inline: true);
                     return this.id + "";
+                }
+                case "eq":
+                {
+                  var other = factory.Get(int.Parse(msgObj.tensorIndexParams[0]));
+                  var result = this.Eq(other);
+                  return result.id + "";
+                }
+                case "eq_":
+                {
+                  var other = factory.Get(int.Parse(msgObj.tensorIndexParams[0]));
+                  this.Eq(other, inline: true);
+                  return this.id + "";
                 }
                 case "cos":
                 {
@@ -333,7 +352,7 @@ namespace OpenMined.Syft.Tensor
                     var result = Sqrt();
                     return result.Id + "";
                 }
-                
+
                 case "sin":
                 {
                      var result = Sin();
