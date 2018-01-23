@@ -25,13 +25,12 @@ namespace OpenMined.Syft.Tensor
 		    return true;
 	    }
 	    
-	    public void Backward(FloatTensor grad = null, FloatTensor grad_origin = null)
-	    {
-		    //Debug.Log("Backward:" + this.id + " creation_op:" + creation_op);
-		  
+        public void Backward(FloatTensor grad = null, FloatTensor grad_origin = null)
+        {
+//            Debug.Log("Backward:" + this.id + " creation_op:" + creation_op + " grad id:" + grad.id );
+            
 		    if (autograd)
 		    {
-			    
 			    if (grad == null)
 			    {
 				    Debug.Log("Grad not Found... Creating Gradient of 1s");
@@ -131,12 +130,11 @@ namespace OpenMined.Syft.Tensor
 		                    
 		                    factory.Get(creators[i]).Backward(slice);
 	                    }
-	                    
                     }
                     else if (creation_op == "contiguous")
                     {
-	                    //Debug.Log("Contiguous Backpropping Grad:" + grad.Id);
-	                    //Debug.Log("Contiguous Storing Grad:" + this.Grad.Id);
+                        //Debug.Log("Contiguous Backpropping Grad:" + grad.Id);
+                        //Debug.Log("Contiguous Storing Grad:" + this.Grad.Id);
                         factory.Get(creators[0]).Backward(this.Grad.Copy(autograd:this.Grad.Autograd), this);
                     }
                     else if (creation_op == "copy")
@@ -214,7 +212,6 @@ namespace OpenMined.Syft.Tensor
 	                    
 	                    FloatTensor out_grad = back_grad.IndexAdd(indices, dim, grad);
 	                    parent.Backward(out_grad);
-
                     }
                     else if (creation_op == "log")
                     {
@@ -234,14 +231,21 @@ namespace OpenMined.Syft.Tensor
                     }
                     else if (creation_op == "mm")
                     {
-                        FloatTensor x = factory.Get(creators[1]).Transpose();
-                        x.autograd = false;
+                        FloatTensor xt = factory.Get(creators[0]).Transpose();
+                        xt.autograd = false;
+                        FloatTensor wt = factory.Get(creators[1]).Transpose();
+                        wt.autograd = false;
 
-                        FloatTensor y = factory.Get(creators[0]).Transpose();
-                        y.autograd = false;
-
-                        factory.Get(creators[0]).Backward(grad.MM(x), this);
-                        factory.Get(creators[1]).Backward(y.MM(grad), this);
+                        factory.Get(creators[0]).Backward(grad.MM(wt), this);
+                        factory.Get(creators[1]).Backward(xt.MM(grad), this);
+                    }
+                    else if (creation_op == "mmt")
+                    {
+                        FloatTensor x = factory.Get(creators[0]);
+                        FloatTensor wt = factory.Get(creators[1]);
+                        FloatTensor gradt = grad.Transpose();
+                        x.Backward(grad.MM(wt), this);
+                        wt.Backward(gradt.MM(x), this);
                     }
                     else if (creation_op == "neg")
                     {
@@ -249,7 +253,6 @@ namespace OpenMined.Syft.Tensor
                     }
                     else if (creation_op == "pow_scalar")
                     {
-
                         FloatTensor x = factory.Get(creators[0]).Copy(autograd:false);
 
                         factory.Get(creators[0]).Backward(x.Mul(grad).Mul(factory.Get(creators[1]).Data[0]), this);
@@ -278,7 +281,8 @@ namespace OpenMined.Syft.Tensor
 								if (output.Data[i] > 0)
 								{
 									gradInput.Data[i] = 1;
-								}else
+								}
+                                else
 								{
 									gradInput.Data[i] = 0;
 								}                
@@ -305,7 +309,6 @@ namespace OpenMined.Syft.Tensor
                     }
                     else if (creation_op.Contains("softmax-"))
                     {
-
                         FloatTensor c = this.Copy(autograd:false);
                         var dim = int.Parse(creation_op.Split('-')[1]);
 

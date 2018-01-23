@@ -16,24 +16,37 @@ namespace OpenMined.Syft.Layer
         [SerializeField] public readonly FloatTensor _weights;
         [SerializeField] FloatTensor _bias;
         private bool _biased;
+        private bool _fast;
 
         public Linear (SyftController _controller, int input, int output, string initializer="Xavier",
-            bool biased = false, float[] weights = null, float[] bias = null)
-		{
+            bool biased = false, float[] weights = null, float[] bias = null, bool fast = true)
+        {
             init(name);
 
 			this.controller = _controller;
-			
-			_input = input;
-			_output = output;
+
+            _input = fast ? output : input;
+            _output = fast ? input : output;
+            _fast = fast;
 
             _biased = biased || bias != null;
 
-            int[] weightShape = { output, input };
+            int[] weightShape = { _input, _output };
             if (weights == null)
             {
                 weights = initializer == "Xavier" ? controller.RandomWeights(input * output, input) : controller.RandomWeights(input * output);
-            };
+            }
+
+            if (_fast)
+            {
+                var new_weights = new float[weights.Length];
+                for (var idx = 0; idx < weights.Length; idx++)
+                {
+                    new_weights[(idx - (idx % output)) / output + input * (idx % output)] = weights[idx];
+                }
+                weights = new_weights;
+            }
+
             _weights = controller.floatTensorFactory.Create(_shape: weightShape, _data: weights, _autograd: true, _keepgrads: true);
 
             parameters.Add(_weights.Id);
@@ -52,9 +65,11 @@ namespace OpenMined.Syft.Layer
 		}
 
         public override FloatTensor Forward(FloatTensor input)
-		{
-			
-			FloatTensor output = input.MM(_weights);
+        {
+            FloatTensor output;
+            if (_fast) { output = input.MMT(_weights); }
+            else { output = input.MM(_weights); };
+
             if (_biased)
             {
                 output = output.Add(_bias.Expand(output.Shape).Contiguous());

@@ -3,10 +3,10 @@ using NUnit.Framework;
 using OpenMined.Network.Controllers;
 using System.Linq;
 
-namespace OpenMined.Tests.Editor.FloatTensorTests
+namespace OpenMined.Tests.Tensor.FloatTensor
 {
-    [Category("FloatTensorAutogradTests")]
-    public class FloatTensorAutogradTest
+    [Category("AutogradTest")]
+    public class AutogradTest
     {
         private SyftController ctrl;
 
@@ -996,9 +996,7 @@ namespace OpenMined.Tests.Editor.FloatTensorTests
             Assert.True(Math.Abs(weights.Grad.Data[2] - (0.1891759)) < 0.0001);
             
             ctrl.allow_new_tensors = true;
-
         }
-
 
         [Test]
         public void TwoLayerMLPAutograd()
@@ -1035,15 +1033,15 @@ namespace OpenMined.Tests.Editor.FloatTensorTests
             var loss = layer_2.Sub(target).Pow(2);
             loss.Backward(grad);
 
-            Assert.True(Math.Abs(weights1.Grad.Data[0] - (-0.00559968)) < 0.00001);
-            Assert.True(Math.Abs(weights1.Grad.Data[1] - (-0.01954043)) < 0.00001);
-            Assert.True(Math.Abs(weights1.Grad.Data[2] - (-0.00084936)) < 0.00001);
-            Assert.True(Math.Abs(weights1.Grad.Data[3] - (-0.01617729)) < 0.00001);
-            
-            Assert.True(Math.Abs(weights1.Grad.Data[8] - (0.02101371)) < 0.00001);
-            Assert.True(Math.Abs(weights1.Grad.Data[9] - (0.09150549)) < 0.00001);
-            Assert.True(Math.Abs(weights1.Grad.Data[10] - (0.00267767)) < 0.00001);
-            Assert.True(Math.Abs(weights1.Grad.Data[11] - (0.06076522)) < 0.00001);
+            Assert.AreEqual(weights1.Grad.Data[0], -0.00559968, 0.00001);
+            Assert.AreEqual(weights1.Grad.Data[1], -0.01954043, 0.00001);
+            Assert.AreEqual(weights1.Grad.Data[2], -0.00084936, 0.00001);
+            Assert.AreEqual(weights1.Grad.Data[3], -0.01617729, 0.00001);
+
+            Assert.AreEqual(weights1.Grad.Data[8], 0.02101371, 0.00001);
+            Assert.AreEqual(weights1.Grad.Data[9], 0.09150549, 0.00001);
+            Assert.AreEqual(weights1.Grad.Data[10], 0.00267767, 0.00001);
+            Assert.AreEqual(weights1.Grad.Data[11], 0.06076522, 0.00001);
 
             weights1.Sub(weights1.Grad,inline:true);
             weights2.Sub(weights2.Grad,inline:true);
@@ -1066,7 +1064,6 @@ namespace OpenMined.Tests.Editor.FloatTensorTests
             Assert.True(Math.Abs(weights1.Grad.Data[11] - (0.02481702)) < 0.00001);
             
             ctrl.allow_new_tensors = true;
-
         }
         
         [Test]
@@ -1495,7 +1492,6 @@ namespace OpenMined.Tests.Editor.FloatTensorTests
             }
 
             ctrl.allow_new_tensors = true;
-
         }
     }
 }

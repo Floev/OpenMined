@@ -1,21 +1,17 @@
-using System;
 using UnityEngine;
-using UnityEditor;
 using NUnit.Framework;
 using OpenMined.Network.Controllers;
-using OpenMined.Syft.Tensor;
 using OpenMined.Network.Servers;
-using UnityEditor.VersionControl;
 
-namespace OpenMined.Tests.Editor.IntTensorTests
+namespace OpenMined.Tests.Tensor.IntTensor
 {
-    [Category("IntTensorGPUTests")]
-    public class IntTensorGPUTest
+    [Category("GPUTest")]
+    public class GPUTest
     {
         public SyftController ctrl;
         public ComputeShader shader;
 
-        public void AssertEqualTensorsData(IntTensor t1, IntTensor t2, double delta = 0.0d)
+        public void AssertEqualTensorsData(Syft.Tensor.IntTensor t1, Syft.Tensor.IntTensor t2, double delta = 0.0d)
         {
             
             int[] data1 = new int[t1.Size];
@@ -36,7 +32,7 @@ namespace OpenMined.Tests.Editor.IntTensorTests
             }
         }
 
-        public void AssertApproximatelyEqualTensorsData(IntTensor t1, IntTensor t2)
+        public void AssertApproximatelyEqualTensorsData(Syft.Tensor.IntTensor t1, Syft.Tensor.IntTensor t2)
         {
             AssertEqualTensorsData(t1, t2, .0001f);
         }

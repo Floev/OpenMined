@@ -92,8 +92,8 @@ namespace OpenMined.Syft.Tensor
 			}
 			return result;
 		}
-        
-		public FloatTensor Add(FloatTensor x, bool inline = false, FloatTensor result = null, bool override_checks= false)
+
+        public FloatTensor Add(FloatTensor x, bool inline = false, FloatTensor result = null, bool override_checks= false)
 		{
 		    
 		    if ((!IsContiguous() || !x.IsContiguous()) && override_checks == false) 
@@ -131,14 +131,12 @@ namespace OpenMined.Syft.Tensor
 
 		    result = HookGraph (ref result, tensor_inputs:new FloatTensor[]{x}, creation_op:"add_elem", inline:inline);
 
-
 		    if (dataOnGpu)
 		    {
 		        if (inline)
 		        {
 		            if (autograd)
 		                throw new InvalidOperationException("Cannot call inline functions if you intend to run backprop.");
-
 
 		            AddElemGPU_(x);
 		            return this;
@@ -282,19 +280,15 @@ namespace OpenMined.Syft.Tensor
                 var nCpu = Math.Min( SystemInfo.processorCount, size );
                 Parallel.For(0, nCpu, workerId =>
                 {
-    //                Debug.LogFormat("Running worker {0}, size {1}, nCpu {2}", workerId, size, nCpu);
                     var idx = size * workerId / nCpu;
-                    //                    Debug.LogFormat("Running worker {0}, start idx {1}",workerId,idx);
                     for (int k = idx; k < size * ( workerId + 1 ) / nCpu; k++)
                     {
                         var j = k % res_shape[1];
                         var i = (k - j) / res_shape[0];
                         int t1_start = i * shape1[1];
                         int t2_start = j * shape1[1];
-                        //                      Debug.LogFormat("Running worker {0}, idx {1}, i {2}, j {3}", workerId,idx,i,j);
                         for (var l = 0; l < shape1[1]; l++)
                         {
-                            Debug.LogFormat("Running worker {0}, idx {1}, i {2}, j {3}, from {4} & {5}", workerId, k, i, j, t1_start, t2_start);
                             Data[k] += tensor1[t1_start] * tensor2[t2_start];
                             t1_start += 1;
                             t2_start += 1;
@@ -2162,13 +2156,12 @@ namespace OpenMined.Syft.Tensor
         public FloatTensor Transpose(int dimension1, int dimension2, FloatTensor result = null, bool inline = false)
         {
             if( inline )
-                throw (new NotImplementedException("transpose inline not yet available"));
+                throw (new NotImplementedException("transpose called inline, but doesn't have an inline version"));
 
             if (!IsContiguous()) {
                 throw new InvalidOperationException ("Tensor must be contiguous, call Contiguous() to convert");
             }
 
-            //TODO: Should we create a new Tensor object here?
             if (dimension1 < 0 || dimension1 >= shape.Length)
                 throw new ArgumentOutOfRangeException("dimension1");
             if (dimension2 < 0 || dimension2 >= shape.Length)
@@ -2184,31 +2177,12 @@ namespace OpenMined.Syft.Tensor
             newShape[dimension1] = newShape[dimension2];
             newShape[dimension2] = tmpDim;
 
-            //var result = new FloatTensor(_controller: controller, _shape: newShape, _shader: this.shader);
-            Debug.Log("Run the transpose hook");
             result = HookGraph(ref result, creation_op: "transpose", inline: inline, resultShape: newShape);
-
-            Debug.LogFormat("Shape of input: {0}", string.Join(",", Shape));
-            Debug.LogFormat("Shape of result: {0}", string.Join(",", result.Shape));
-            Debug.LogFormat("Strides of input: {0}", string.Join(",", Strides));
-            Debug.LogFormat("Strides of result: {0}", string.Join(",", result.Strides));
 
             if (dataOnGpu)
             {
-                Debug.Log("Transpose result init gpu");
-                Debug.LogFormat("Result dataongpu: {0}", result.DataOnGpu);
                 result.Gpu(shader);
-/*                Debug.LogFormat("Shape of input: {0}", string.Join(",", Shape));
-                Debug.LogFormat("Shape of result: {0}", string.Join(",", result.Shape));
-                Debug.LogFormat("Strides of input: {0}", string.Join(",", Strides));
-                Debug.LogFormat("Strides of result: {0}", string.Join(",", result.Strides));
-                */
-                //if (inline) {
-                //TransposeGPU_(); return this; 
-                //}
-                //else {
                 return TransposeGPU(result, dimension1, dimension2);
-                //}
             }
             else
             {
@@ -2227,22 +2201,6 @@ namespace OpenMined.Syft.Tensor
                 });
             }
             return result;
-
-            /* for (var i = 0; i < size; i++)
-             {
-                 var idx = i;
-                 var indices = new int[Shape.Length];
-                 for (var i = 0; i < Shape.Length; ++i)
-                 {
-                     indices[i] = (idx - (idx % (strides[i]))) / strides[i];
-                     idx -= indices[i] * strides[i];
-                 }
-
-                 var tmp = indices[dimension1];
-                 indices[dimension1] = indices[dimension2];
-                 indices[dimension2] = tmp;
-                 result[indices] = this[i];
-             }*/
         }
 
         public void Triu_(int k)

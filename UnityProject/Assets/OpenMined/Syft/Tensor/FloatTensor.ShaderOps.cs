@@ -166,7 +166,7 @@ namespace OpenMined.Syft.Tensor
 
         public FloatTensor AbsGPU(FloatTensor result)
         {
-            Debug.LogFormat("<color=blue>FloatTensor.AbsGPU dataOnGpu: {0}</color>", dataOnGpu);
+//            Debug.LogFormat("<color=blue>FloatTensor.AbsGPU dataOnGpu: {0}</color>", dataOnGpu);
             if (dataOnGpu)
             {
                 shader.SetBuffer(AbsKernel, "AbsData", dataBuffer);
@@ -1055,7 +1055,7 @@ namespace OpenMined.Syft.Tensor
             // 3. copy to cpu and sum over groups -> trace
             float[] resultPerGroup = new float[numgroups];
             resultPerGroupBuffer.GetData(resultPerGroup);
-            UnityEngine.Debug.Log(resultPerGroup[0]);
+//            Debug.Log(resultPerGroup[0]);
 
             float sum = 0;
             foreach (var item in resultPerGroup)
@@ -1090,36 +1090,25 @@ namespace OpenMined.Syft.Tensor
             var inttest = new int[result.size];
             var floattest = new float[result.size];
             dataBuffer.GetData(floattest);
-            Debug.LogFormat("DataBuffer: {0}", string.Join(",",floattest));
             shapeBuffer.GetData(inttest);
-            Debug.LogFormat("shapeBuffer: {0}", string.Join(",", inttest));
             result.ShapeBuffer.GetData(inttest);
-            Debug.LogFormat("resultShapeBuffer: {0}", string.Join(",", inttest));
             stridesBuffer.GetData(inttest);
-            Debug.LogFormat("stridesBuffer: {0}", string.Join(",", inttest));
             result.StridesBuffer.GetData(inttest);
-            Debug.LogFormat("resultStridesBuffer: {0}", string.Join(",", inttest));
-
 
             var dimBuffer = SendIntToGpu(TransposeKernel, Shape.Length, "TransposeDims");
             var dim1Buffer = SendIntToGpu(TransposeKernel, dim1, "TransposeDim1");
             var dim2Buffer = SendIntToGpu(TransposeKernel, dim2, "TransposeDim2");
-  //          var indicesBuffer = new ComputeBuffer(strides.Length, sizeof(int));
-//            indicesBuffer.SetData(new int[Shape.Length]);
 
             shader.SetBuffer(TransposeKernel, "TransposeData", DataBuffer);
             shader.SetBuffer(TransposeKernel, "TransposeShape", result.shapeBuffer);
-//            shader.SetBuffer(TransposeKernel, "TransposeShape", shapeBuffer);
             shader.SetBuffer(TransposeKernel, "TransposeStridesIn", StridesBuffer);
             shader.SetBuffer(TransposeKernel, "TransposeStridesOut", result.StridesBuffer);
-//            shader.SetBuffer(TransposeKernel, "TransposeIndices", indicesBuffer);
             shader.SetBuffer(TransposeKernel, "TransposeResult", result.DataBuffer);
             shader.Dispatch(TransposeKernel, this.size, 1, 1);
 
             dimBuffer.Release();
             dim1Buffer.Release();
             dim2Buffer.Release();
-//            indicesBuffer.Release();
 
             return result;
         }
