@@ -121,6 +121,19 @@ namespace OpenMined.Syft.Tensor
             {
                 throw new InvalidOperationException("Tensor must be contiguous, call Contiguous() to convert");
             }
+            // suppport for -1 parameter value in new_shape
+            var index = Array.IndexOf(new_shape, -1);
+            if(index != -1)
+            {
+                int tempSize = 1;
+                foreach(var s in new_shape)
+                {
+                    if (s != -1)
+                        tempSize *= s;
+                }
+                new_shape[index] = size / tempSize;
+            }
+
             if (inline == true)
             {
 
@@ -141,7 +154,9 @@ namespace OpenMined.Syft.Tensor
             }
             else
             {
-                throw new NotImplementedException();
+                IntTensor result = factory.Create(new_shape);
+                result.Add(this, inline: true);
+                return result;
             }
 
         }

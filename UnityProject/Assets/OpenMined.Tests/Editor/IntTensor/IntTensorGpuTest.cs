@@ -324,6 +324,39 @@ namespace OpenMined.Tests.Tensor.IntTensor
             AssertApproximatelyEqualTensorsData(expectedCosTensor, actualCosTensor);
         }
 
+        [Test]
+        public void view()
+        {
+            int[] data1 = { 4, 4, 7, 7, 2, 2, 4, 8, 7, 8, 8, 0, 6, 2, 8, 9 };
+            int[] shape1 = { 2, 2, 4 };
+            var tensor1 = ctrl.intTensorFactory.Create(_data: data1, _shape: shape1);
+            tensor1.Gpu(shader);
+
+            int[] data2 = { 4, 4, 7, 7, 2, 2, 4, 8, 7, 8, 8, 0, 6, 2, 8, 9 };
+            int[] shape2 = { 8, 2 };
+            var expectedIntTesnor = ctrl.intTensorFactory.Create(_data: data2, _shape: shape2);
+            expectedIntTesnor.Gpu(shader);
+
+            var actualIntTensor = tensor1.View(shape2);
+            AssertEqualTensorsData(expectedIntTesnor, actualIntTensor);
+        }
+
+        [Test]
+        public void view_()
+        {
+            int[] data1 = { 4, 4, 7, 7, 2, 2, 4, 8, 7, 8, 8, 0, 6, 2, 8, 9 };
+            int[] shape1 = { 2, 2, 4 };
+            var tensor1 = ctrl.intTensorFactory.Create(_data: data1, _shape: shape1);
+            tensor1.Gpu(shader);
+
+            int[] data2 = { 4, 4, 7, 7, 2, 2, 4, 8, 7, 8, 8, 0, 6, 2, 8, 9 };
+            int[] shape2 = { 8, 2 };
+            var expectedIntTesnor = ctrl.intTensorFactory.Create(_data: data2, _shape: shape2);
+            expectedIntTesnor.Gpu(shader);
+
+            tensor1.View(shape2, inline: true);
+            AssertEqualTensorsData(expectedIntTesnor, tensor1);
+        }
         /* closes class and namespace */
     }
 }

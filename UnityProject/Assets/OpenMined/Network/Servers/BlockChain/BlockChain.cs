@@ -15,9 +15,7 @@ namespace OpenMined.Network.Servers.BlockChain
  
         public void Start()
         {
-            var o = ReadConfig();
-
-            if (o["trainer"].ToObject<bool>())
+            if (Config.Config.trainer)
             {
                 Debug.Log("POLLING");
                 PollNext();
@@ -32,34 +30,36 @@ namespace OpenMined.Network.Servers.BlockChain
 
         IEnumerator PollNetwork()
         {
+            Debug.Log("Starting poll");
 
             var getJobIdRequest = new GetAvailableJobIdRequest();
             yield return getJobIdRequest.RunRequest();
             var jobId = getJobIdRequest.GetResponse().jobId;
 
-            if (jobId == null)
+            while (jobId == null || jobId == "")
             {
-                yield return new WaitForSeconds(10);
-                PollNext();
-            } else {
-                var getJobRequest = new GetJobRequest(jobId);
-                yield return getJobRequest.RunRequest();
-                var jobHash = getJobRequest.GetResponse().jobAddress;
-
-                var job = Ipfs.Ipfs.Get<IpfsJob>(jobHash);
-                var controller = Camera.main.GetComponent<SyftServer>().controller;
-                var grid = new OpenMined.Network.Controllers.Grid(controller);
-
-                var result = grid.TrainModel(job);
-
-                var response = new AddResultRequest(jobHash, result);
-                yield return response.RunRequest();
-
-                Debug.Log("did a job");
-
-                yield return new WaitForSeconds(10);
-                PollNext();    
+                Debug.Log("No available jobs.  Trying again in 2 seconds");
+                yield return new WaitForSeconds(2);
+                getJobIdRequest = new GetAvailableJobIdRequest();
+                yield return getJobIdRequest.RunRequest();
+                jobId = getJobIdRequest.GetResponse().jobId;
             }
+
+            var getJobRequest = new GetJobRequest(jobId);
+            yield return getJobRequest.RunRequest();
+            var jobHash = getJobRequest.GetResponse().jobAddress;
+
+            var job = Ipfs.Ipfs.Get<IpfsJob>(jobHash);
+            var controller = Camera.main.GetComponent<SyftServer>().controller;
+            var grid = new OpenMined.Network.Controllers.Grid(controller);
+
+            var result = grid.TrainModel(job);
+
+            var response = new AddResultRequest(jobHash, result);
+            yield return response.RunRequest();
+
+            Debug.Log("did a job");
+            yield return PollNetwork();
         }
 
 

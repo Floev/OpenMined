@@ -1,6 +1,10 @@
 using System;
 using NUnit.Framework;
 using OpenMined.Network.Controllers;
+using OpenMined.Protobuf;
+using UnityEngine;
+using Google.Protobuf;
+using OpenMined.Protobuf.Onnx;
 
 namespace OpenMined.Tests.Tensor.IntTensor
 {
@@ -575,6 +579,56 @@ namespace OpenMined.Tests.Tensor.IntTensor
             for (int i = 0; i < actualCosTensor.Size; i++)
             {
                 Assert.AreEqual(expectedCosTensor[i], actualCosTensor[i], 0.00001f);
+            }
+
+        }
+
+        [Test]
+        public void GetProto()
+        {
+            int[] data = {-1, 0, 1, int.MaxValue, int.MinValue};
+            int[] shape = {5};
+            Syft.Tensor.IntTensor t = ctrl.intTensorFactory.Create(_data: data, _shape: shape);
+
+            TensorProto message = t.GetProto();
+            byte[] messageAsByte = message.ToByteArray();
+            TensorProto message2 = TensorProto.Parser.ParseFrom(messageAsByte);
+
+            Assert.AreEqual(message, message2);
+        }
+        [Test]
+        public void view()
+        {
+            int[] data1 = { 4, 4, 7, 7, 2, 2, 4, 8, 7, 8, 8, 0, 6, 2, 8, 9 };
+            int[] shape1 = { 2, 2, 4 };
+            var tesnor1 = ctrl.intTensorFactory.Create(_data: data1, _shape: shape1);
+
+            int[] data2 = { 4, 4, 7, 7, 2, 2, 4, 8, 7, 8, 8, 0, 6, 2, 8, 9 };
+            int[] shape2 = { 8, 2 };
+            var expectedIntTesnor = ctrl.intTensorFactory.Create(_data: data2, _shape: shape2);
+
+            var actualIntTensor = tesnor1.View(shape2);
+            for(int i = 0; i < actualIntTensor.Size; i++)
+            {
+                Assert.AreEqual(expectedIntTesnor[i], actualIntTensor[i]);
+            }
+        }
+
+        [Test]
+        public void view_()
+        {
+            int[] data1 = { 4, 4, 7, 7, 2, 2, 4, 8, 7, 8, 8, 0, 6, 2, 8, 9 };
+            int[] shape1 = { 2, 2, 4 };
+            var tensor1 = ctrl.intTensorFactory.Create(_data: data1, _shape: shape1);
+
+            int[] data2 = { 4, 4, 7, 7, 2, 2, 4, 8, 7, 8, 8, 0, 6, 2, 8, 9 };
+            int[] shape2 = { 8, 2 };
+            var expectedIntTesnor = ctrl.intTensorFactory.Create(_data: data2, _shape: shape2);
+
+            tensor1.View(shape2, inline: true);
+            for (int i = 0; i < tensor1.Size; i++)
+            {
+                Assert.AreEqual(expectedIntTesnor[i], tensor1[i]);
             }
         }
 

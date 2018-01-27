@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using OpenMined.Syft.Tensor.Factories;
 using System.Linq;
 using System.Threading.Tasks;
+using OpenMined.Protobuf.Onnx;
 
 namespace OpenMined.Syft.Tensor
 {
@@ -375,7 +376,7 @@ namespace OpenMined.Syft.Tensor
                 {
                     if (DataOnGpu)
                     {
-                        var tmpData = new float[size];
+                        var tmpData = new int[size];
                         dataBuffer.GetData(tmpData);
                         return string.Join(" ", tmpData);
 
@@ -409,8 +410,81 @@ namespace OpenMined.Syft.Tensor
                             return Transpose().Id.ToString();
                         }
                 }
+                
+                case "view":
+                {
+                    int[] new_dims = new int[msgObj.tensorIndexParams.Length];
+                    for (int i = 0; i < msgObj.tensorIndexParams.Length; i++)
+                    {
+                        new_dims[i] = int.Parse(msgObj.tensorIndexParams[i]);
+                    }
+                    var result = View(new_dims);
+                    return result.Id.ToString();
+                }
+
+                case "view_":
+                {
+                    int[] new_dims = new int[msgObj.tensorIndexParams.Length];
+                    for (int i = 0; i < msgObj.tensorIndexParams.Length; i++)
+                    {
+                        new_dims[i] = int.Parse(msgObj.tensorIndexParams[i]);
+                    }
+                    View(new_dims, inline: true);
+                    return Id.ToString();
+                }
+                
+                case "to_numpy_by_proto":
+                {
+                    return this.GetProto().ToString();
+                }
             }
             return "IntTensor.processMessage: Command not found:" + msgObj.functionCall;
+        }
+
+        public TensorProto GetProto()
+        {
+            // TensorProto t = base.ToProto();
+            int[] tmpData;
+            if (DataOnGpu)
+            {
+                tmpData = new int[size];
+                dataBuffer.GetData(tmpData);
+            }
+            else
+            {
+                tmpData = Data;
+            }
+            TensorProto t = new TensorProto
+            {   
+                Dims = { Array.ConvertAll(this.Shape, val => (long)val) },
+                DataType = TensorProto.Types.DataType.Int32,
+                Int32Data = { tmpData },
+                Name = this.Id.ToString(),
+                DocString = "",
+            };
+
+            return t;
+        }
+
+        public ValueInfoProto GetValueInfoProto ()
+        {
+            ValueInfoProto i = new ValueInfoProto
+            {
+                Name = this.Id.ToString(),
+                Type = new TypeProto
+                {
+                    TensorType = new TypeProto.Types.Tensor
+                    {
+                        ElemType = TensorProto.Types.DataType.Int32,
+                        Shape = new TensorShapeProto
+                        {
+                            Dim = { Array.ConvertAll(this.Shape, val => new TensorShapeProto.Types.Dimension { DimValue = val }) }
+                        }
+                    }
+                }
+            };
+
+            return i;
         }
 
     }

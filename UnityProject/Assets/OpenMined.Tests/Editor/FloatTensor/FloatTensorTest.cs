@@ -2,6 +2,9 @@ using NUnit.Framework;
 using OpenMined.Network.Controllers;
 using System;
 using UnityEngine;
+using OpenMined.Protobuf;
+using Google.Protobuf;
+using OpenMined.Protobuf.Onnx;
 
 namespace OpenMined.Tests.Tensor.FloatTensor
 {
@@ -3433,6 +3436,20 @@ namespace OpenMined.Tests.Tensor.FloatTensor
         }
 
         [Test]
+        public void GetProto()
+        {
+            float[] data = {-1, 0, 1, float.MaxValue, float.MinValue};
+            int[] shape = {5};
+            Syft.Tensor.FloatTensor t = ctrl.floatTensorFactory.Create(_data: data, _shape: shape);
+
+            TensorProto message = t.GetProto();
+            byte[] messageAsByte = message.ToByteArray();
+            TensorProto message2 = TensorProto.Parser.ParseFrom(messageAsByte);
+
+            Assert.AreEqual(message, message2);
+        }
+
+        [Test]
         public void Zero_()
         {
             float[] data1 = {-1, 0, 1, float.MaxValue, float.MinValue};
@@ -3450,8 +3467,5 @@ namespace OpenMined.Tests.Tensor.FloatTensor
                 Assert.AreEqual(expectedTensor[i], tensor1[i]);
             }
         }
-
-
-/* closes class and namespace */
     }
 }

@@ -41,10 +41,8 @@ namespace OpenMined.UI
         }
 
         private IEnumerator Start()
-        {
-            var o = ReadConfig();
-            
-            if ((bool)o["identify"])
+        {            
+            if (Config.Config.identity)
             {
                 Debug.Log("Login OnGUI()");
             

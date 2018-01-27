@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
@@ -15,6 +16,8 @@ using Agent = OpenMined.Syft.NN.RL.Agent;
 using OpenMined.Network.Servers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OpenMined.Protobuf.Onnx;
+using Google.Protobuf;
 using OpenMined.Network.Servers.BlockChain.Requests;
 using OpenMined.Network.Servers.BlockChain.Response;
 
@@ -535,8 +538,69 @@ namespace OpenMined.Network.Controllers
                                 response(model.Id.ToString());
                                 return;
 						}
-                            response("Unity Error: SyftController.processMessage: Command not found:" + msgObj.objectType + ":" + msgObj.functionCall);
-                            return;
+						else if (msgObj.functionCall == "from_proto")
+						{
+							Debug.Log("Loading Model from ONNX:");
+							var filename = msgObj.tensorIndexParams[0];
+
+							var input = File.OpenRead(filename);
+							ModelProto modelProto = ModelProto.Parser.ParseFrom(input);
+
+							Sequential model = this.BuildSequential();
+
+							foreach (NodeProto node in modelProto.Graph.Node)
+							{
+								Layer layer;
+								GraphProto g = ONNXTools.GetSubGraphFromNodeAndMainGraph(node, modelProto.Graph);
+								if (node.OpType == "Gemm")
+								{
+									layer = new Linear(this, g);
+								}
+								else if (node.OpType == "Dropout")
+								{
+									layer = new Dropout(this, g);
+								}
+								else if (node.OpType == "Relu")
+								{
+									layer = new ReLU(this, g);
+								}
+								else if (node.OpType == "Softmax")
+								{
+									layer = new Softmax(this, g);
+								}
+								else
+								{
+									response("Unity Error: SyftController.processMessage: Layer not yet implemented for deserialization:");
+                  return;
+								}
+								model.AddLayer(layer);
+							}
+
+							response(model.Id.ToString());
+              return;
+						}
+						else if (msgObj.functionCall == "to_proto")
+						{
+							ModelProto model =  this.ToProto(msgObj.tensorIndexParams);
+							string filename = msgObj.tensorIndexParams[2];
+              string type = msgObj.tensorIndexParams[3];
+              if (type == "json")
+              {
+                response(model.ToString()); 
+              }
+              else
+              { 
+                using (var output = File.Create(filename))
+                {  
+                 model.WriteTo(output);
+                }
+                response(new FileInfo(filename).FullName);
+              }
+              return;
+						}
+
+						response("Unity Error: SyftController.processMessage: Command not found:" + msgObj.objectType + ":" + msgObj.functionCall);
+            return;
 					}
                     case "Grid":
                         if (msgObj.functionCall == "learn")
@@ -551,6 +615,15 @@ namespace OpenMined.Network.Controllers
                         if (msgObj.functionCall == "getResults")
                         {
                             this.grid.GetResults(msgObj.experimentId, response);
+                            return;
+                        }
+
+                        // like getResults but doesn't pause to wait for results
+                        // this function will return right away telling you if
+                        // it knows whether or not it is done
+                        if (msgObj.functionCall == "checkStatus")
+                        {
+                            this.grid.CheckStatus(msgObj.experimentId, response);
                             return;
                         }
 
@@ -572,23 +645,49 @@ namespace OpenMined.Network.Controllers
             return;
 		}
 
+		private ModelProto ToProto (string[] parameters)
+		{
+			int modelId = int.Parse(parameters[0]);
+			int inputTensorId = int.Parse(parameters[1]);
+			Debug.Log("<color=yellow>Serialize to ONNX, modelId:" + modelId.ToString() + ", inputTensorId:" + inputTensorId.ToString() + "</color>");
+
+      Model model = this.GetModel(modelId);
+			ModelProto m = new ModelProto
+			{
+			    IrVersion = 2,
+			    OpsetImport = { new OperatorSetIdProto
+			    {
+			        Domain = "", // operator set that is defined as part of the ONNX specification
+			        Version = 2
+			    }},
+			    ProducerName = "openmined",
+			    ProducerVersion = "0.0.2",
+			    Domain = "org.openmined",
+			    ModelVersion = 0,
+			    DocString = "",
+			    Graph = model.GetProto(inputTensorId, this),
+			};
+
+			return m;
+		}
+
 		private Sequential BuildSequential()
 		{
 			return new Sequential(this);
 		}
 
-		private Linear BuildLinear(string[] Params)
+		private Linear BuildLinear(string[] parameters)
 		{
-			int input = int.Parse(Params[1]);
-			int output = int.Parse(Params[2]);
-			string initializer =  Params[3];
+			int input = int.Parse(parameters[1]);
+			int output = int.Parse(parameters[2]);
+			string initializer =  parameters[3];
 
 			return new Linear(this, input, output, initializer);
 		}
 
-		private Dropout BuildDropout(string[] Params)
+		private Dropout BuildDropout(string[] parameters)
 		{
-			float rate = float.Parse(Params[1]);
+			float rate = float.Parse(parameters[1]);
 
 			return new Dropout(this, rate);
 		}
@@ -608,15 +707,15 @@ namespace OpenMined.Network.Controllers
 			return new Sigmoid(this);
 		}
 
-		private Softmax BuildSoftmax(string[] Params)
+		private Softmax BuildSoftmax(string[] parameters)
 		{
-			int reduction_dim = int.Parse(Params[1]);
+			int reduction_dim = int.Parse(parameters[1]);
 			return new Softmax(this, reduction_dim);
 		}
 
-		private LogSoftmax BuildLogSoftmax(string[] Params)
+		private LogSoftmax BuildLogSoftmax(string[] parameters)
 		{
-			int reduction_dim = int.Parse(Params[1]);
+			int reduction_dim = int.Parse(parameters[1]);
 			return new LogSoftmax(this, reduction_dim);
 		}
     }
