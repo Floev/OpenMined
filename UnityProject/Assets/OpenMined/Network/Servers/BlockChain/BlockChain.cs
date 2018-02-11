@@ -62,7 +62,6 @@ namespace OpenMined.Network.Servers.BlockChain
             yield return PollNetwork();
         }
 
-
         // Helpers
 
         private JObject ReadConfig()

@@ -232,23 +232,14 @@ namespace OpenMined.Network.Controllers
                         // weight float tensor
                         var weightData = layer.SelectToken("config.weights.data").ToObject<float[]>();
 
-                        Linear linear = null;
+                        var input = layer.SelectToken("config.input").ToObject<int>();
+                        var output = layer.SelectToken("config.output").ToObject<int>();
+                        float[] biasData = null;
                         if (layer.SelectToken("config.bias") == null)
                         {
-                            var biasData = layer.SelectToken("config.bias.data").ToObject<float[]>();
-
-                            var input = layer.SelectToken("config.input").ToObject<int>();
-                            var output = layer.SelectToken("config.output").ToObject<int>();
-
-                            linear = new Linear(controller, input: input, output: output, weights: weightData, bias: biasData);
+                            biasData = layer.SelectToken("config.bias.data").ToObject<float[]>();
                         }
-                        else
-                        {
-                            var input = layer.SelectToken("config.input").ToObject<int>();
-                            var output = layer.SelectToken("config.output").ToObject<int>();
-
-                            linear = new Linear(controller, input: input, output: output, weights: weightData);
-                        }
+                        Linear linear = new Linear(controller, input: input, output: output, weights: weightData, bias: biasData);
                         seq.AddLayer(linear);
                         break;
                     case "ReLU":
