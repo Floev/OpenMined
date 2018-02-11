@@ -1,8 +1,12 @@
-﻿using OpenMined.Network.Controllers;
+﻿using System;
+using System.Collections.Generic;
+using OpenMined.Network.Controllers;
 using OpenMined.Syft.Tensor;
 using UnityEngine;
 using OpenMined.Network.Servers;
 using Newtonsoft.Json.Linq;
+using OpenMined.Protobuf.Onnx;
+using Google.Protobuf.Collections;
 
 namespace OpenMined.Syft.Layer
 {
@@ -63,6 +67,33 @@ namespace OpenMined.Syft.Layer
             controller.addModel(this);
         }
 
+		// Overloading the constructor to load from an ONNX proto
+		public Linear (SyftController _controller, GraphProto graph)
+		{
+            init(this.name);
+
+			this.controller = _controller;
+
+            _weights = ONNXTools.BuildFloatTensor(graph.Initializer[0], this.controller, autograd: true, keepgrads: true);
+			AttributeProto transB = ONNXTools.FindAttribute(graph.Node[0], "transB");
+			if (transB != null && transB.I == 1)
+			{
+				_weights = _weights.Transpose();
+			}
+            parameters.Add(_weights.Id);
+            _input = _weights.Shape[0];
+            _output = _weights.Shape[1];
+
+      
+            _bias = ONNXTools.BuildFloatTensor(graph.Initializer[1], this.controller, autograd: true, keepgrads: true);
+            _biased = true;  
+            parameters.Add(_bias.Id);
+      
+			#pragma warning disable 420
+			id = System.Threading.Interlocked.Increment(ref nCreated);
+			controller.addModel(this);
+        }
+
         public override FloatTensor Forward(FloatTensor input)
         {
             FloatTensor output;
@@ -88,9 +119,9 @@ namespace OpenMined.Syft.Layer
             return _biased ? _weights.Size + _bias.Size : _weights.Size;
         }
 
-        public override JToken GetConfig()
-        {
-		    var config = new JObject
+	  public override JToken GetConfig()
+    {
+		  var config = new JObject
 			{
 			    { "name", "linear" },
 				{ "trainable", true },
@@ -130,7 +161,77 @@ namespace OpenMined.Syft.Layer
 		        { "bias_constraint", null }
 				};
 
-				return config;
+			return config;
+		}
+
+		// See https://github.com/onnx/onnx/blob/master/docs/Operators.md#Gemm
+		public override GraphProto GetProto (int inputTensorId, SyftController ctrl)
+		{
+			FloatTensor input_tensor = ctrl.floatTensorFactory.Get(inputTensorId);
+			this.Forward(input_tensor);
+
+			NodeProto node = new NodeProto
+			{
+				Input = { inputTensorId.ToString(), _weights.Id.ToString() },
+				Output = { activation.ToString() },
+				Name = this.name,
+				OpType = "Gemm",
+				DocString = ""
+			};
+      if (_biased)
+      {
+        node.Input.Add(_bias.Id.ToString());
+      }
+      
+			node.Attribute.Add(new AttributeProto{
+				Name = "alpha",
+				Type = AttributeProto.Types.AttributeType.Float,
+				F = 1.0f
+			});
+			node.Attribute.Add(new AttributeProto{
+				Name = "beta",
+				Type = AttributeProto.Types.AttributeType.Float,
+				F = 1.0f
+			});
+			node.Attribute.Add(new AttributeProto{
+				Name = "broadcast",
+				Type = AttributeProto.Types.AttributeType.Int,
+				I = 1
+			});
+
+			TensorProto w_init = _weights.GetProto();
+
+			ValueInfoProto input_info = input_tensor.GetValueInfoProto();
+			ValueInfoProto w_info = _weights.GetValueInfoProto();
+
+			GraphProto g =  new GraphProto
+			{
+        Name = Guid.NewGuid().ToString("N"),
+				Node = { node },
+				Initializer = { w_init },
+				Input = { input_info, w_info },
+				Output = { ctrl.floatTensorFactory.Get(activation).GetValueInfoProto() },
+			};
+
+      if (_biased)
+      {
+        TensorProto b_init = _bias.GetProto();
+        ValueInfoProto b_info = _bias.GetValueInfoProto();
+        g.Initializer.Add(b_init);
+        g.Input.Add(b_info);
+      }
+      else
+      {
+        // The Gemm schema, must have 3 inputs (must have a bias)
+        float[] tmpData = new float[1] {0};
+        int[] tmpDims = new int[1] {1};
+        FloatTensor tmpBias = ctrl.floatTensorFactory.Create(_data: tmpData, _shape: tmpDims, _autograd: false, _keepgrads: false);
+        g.Initializer.Add(tmpBias.GetProto());
+        g.Input.Add(tmpBias.GetValueInfoProto());
+        g.Node[0].Input.Add(tmpBias.Id.ToString());
+      }
+
+			return g;
 		}
 	}
 }

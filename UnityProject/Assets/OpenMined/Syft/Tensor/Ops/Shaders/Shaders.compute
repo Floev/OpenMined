@@ -362,6 +362,35 @@ void DivElem (uint3 id: SV_DispatchThreadID) {
 	DivElemDataResult[id.x] = DivElemDataA[id.x] / DivElemDataB[id.x];
 }
 
+#pragma kernel EqElemInt
+
+StructuredBuffer<int> EqElemIntDataSelf;
+StructuredBuffer<int> EqElemIntDataOther;
+RWStructuredBuffer<int> EqElemIntDataResult;
+
+[numthreads(4,1,1)]
+void EqElemInt (uint3 id: SV_DispatchThreadID){
+	if (EqElemIntDataSelf[id.x] == EqElemIntDataOther[id.x]){
+		EqElemIntDataResult[id.x] = 1;
+	} else {
+		EqElemIntDataResult[id.x] = 0;
+	}
+}
+
+#pragma kernel EqElemInt_
+
+RWStructuredBuffer<int> EqElemIntDataSelf_;
+StructuredBuffer<int> EqElemIntDataOther_;
+
+[numthreads(4,1,1)]
+void EqElemInt_ (uint3 id: SV_DispatchThreadID) {
+	if (EqElemIntDataSelf_[id.x] == EqElemIntDataOther_[id.x]){
+		EqElemIntDataSelf_[id.x] = 1;
+	} else {
+		EqElemIntDataSelf_[id.x] = 0;
+	}
+}
+
 #pragma kernel Exp
 
 StructuredBuffer<float> ExpData;

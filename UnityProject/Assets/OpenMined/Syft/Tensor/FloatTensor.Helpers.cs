@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace OpenMined.Syft.Tensor
 {
@@ -81,6 +82,82 @@ namespace OpenMined.Syft.Tensor
                 iterator(temp, i, temp.Length);
             });
         }
+
+
+		private void Sort(SortOrder order = SortOrder.Ascending)
+		{
+			switch (order)
+			{
+				case SortOrder.Descending:
+					base.Sort(data, SortFloatDeascendingHelper.Get);
+					break;
+				case SortOrder.Ascending:
+				default:
+					base.Sort(data, SortFloatAscendingHelper.Get);
+					break;
+			}
+		}
+
+		protected class SortFloatAscendingHelper : IComparer<float>
+		{
+			static public SortFloatAscendingHelper Get
+			{
+				get { 
+					if (_instance == null) 
+					{ 
+						_instance = new SortFloatAscendingHelper();
+					}
+					return _instance;
+				}
+			}
+			static private SortFloatAscendingHelper _instance = null;
+
+			public int Compare(float x, float y)
+			{
+				if (x > y)
+				{
+					return 1;
+				}
+
+				if (y > x)
+				{
+					return -1;
+				}
+
+				return 0;
+			}
+		}
+
+		protected class SortFloatDeascendingHelper : IComparer<float>
+		{
+			static public SortFloatDeascendingHelper Get
+			{
+				get
+				{
+					if (_instance == null)
+					{
+						_instance = new SortFloatDeascendingHelper();
+					}
+					return _instance;
+				}
+			}
+			static private SortFloatDeascendingHelper _instance = null;
+
+			public int Compare(float x, float y)
+			{
+				if (x > y)
+				{
+					return -1;
+				}
+
+				if (y > x)
+				{
+					return 1;
+				}
+
+				return 0;
+			}
+		}
     }
 
     public static class MultiThread

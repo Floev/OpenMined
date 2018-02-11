@@ -7,5 +7,7 @@ namespace OpenMined.Network.Utils
     {
         public int model;
         public float lr;
+        public string criterion;
+        public int iters;
     }    
 }

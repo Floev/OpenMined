@@ -1,7 +1,10 @@
+using System;
+using System.Collections.Generic;
 using OpenMined.Network.Controllers;
 using OpenMined.Syft.Tensor;
 using UnityEngine;
 using Newtonsoft.Json.Linq;
+using OpenMined.Protobuf.Onnx;
 
 namespace OpenMined.Syft.Layer
 {
@@ -14,7 +17,16 @@ namespace OpenMined.Syft.Layer
         {
             init(this.name);
 
-#pragma warning disable 420
+            #pragma warning disable 420
+            id = System.Threading.Interlocked.Increment(ref nCreated);
+            controller.addModel(this);
+        }
+
+        public ReLU(SyftController controller, GraphProto graph)
+        {
+            init(this.name);
+
+            #pragma warning disable 420
             id = System.Threading.Interlocked.Increment(ref nCreated);
             controller.addModel(this);
         }
@@ -27,12 +39,13 @@ namespace OpenMined.Syft.Layer
             return output;
         }
 
+        public override int getParameterCount() { return 0; }
+
+        // Serialization
         public string GetLayerDefinition()
         {
             return JsonUtility.ToJson(this);
         }
-
-        public override int getParameterCount() { return 0; }
 
         public override JToken GetConfig()
         {
@@ -42,6 +55,36 @@ namespace OpenMined.Syft.Layer
             };
             
             return config;
+        }
+
+        // See https://github.com/onnx/onnx/blob/master/docs/Operators.md#Relu
+        public override GraphProto GetProto(int inputTensorId, SyftController ctrl)
+        {
+            FloatTensor input_tensor = ctrl.floatTensorFactory.Get(inputTensorId);
+            if (activation != null)
+            {
+                this.Forward(input_tensor);
+            }
+
+            NodeProto node = new NodeProto
+            {
+                Input = { inputTensorId.ToString() },
+                Output = { activation.ToString() },
+                OpType = "Relu",
+            };
+
+            ValueInfoProto input_info = input_tensor.GetValueInfoProto();
+            
+            GraphProto g =  new GraphProto
+            {
+                Name = Guid.NewGuid().ToString("N"),
+                Node = { node },
+                Initializer = {  },
+                Input = { input_info },
+                Output = { ctrl.floatTensorFactory.Get(activation).GetValueInfoProto() },
+            };
+
+            return g;
         }
     }
 }

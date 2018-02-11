@@ -10,6 +10,7 @@ using OpenMined.Syft.Tensor.Factories;
 using UnityEngine;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OpenMined.Protobuf.Onnx;
 
 
 namespace OpenMined.Syft.Layer
@@ -172,6 +173,30 @@ namespace OpenMined.Syft.Layer
             };
 
             return config;
+        }
+
+        public override GraphProto GetProto (int inputTensorId, SyftController ctrl)
+        {
+            GraphProto g = new GraphProto();
+            g.Name = Guid.NewGuid().ToString("N");
+            for (int i = 0; i < this.layers.Count; i++)
+            {   
+                GraphProto l = controller.GetModel(this.layers[i]).GetProto(inputTensorId, ctrl);
+                if (i != 0)
+                {
+                    l.Input.RemoveAt(0);
+                }
+                inputTensorId = int.Parse(l.Node[0].Output[0]);
+
+                if (i != this.layers.Count - 1)
+                {
+                    l.Output.Clear();
+                }
+
+                g.MergeFrom(l);
+            }
+            
+            return g;
         }
 
     }

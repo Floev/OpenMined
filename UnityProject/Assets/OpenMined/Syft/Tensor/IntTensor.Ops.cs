@@ -7,7 +7,7 @@ using System.Linq;
 namespace OpenMined.Syft.Tensor
 {
     public partial class IntTensor
-    {
+    {   
         public IntTensor Add(int value, bool inline = false)
         {
             if (dataOnGpu)
@@ -17,6 +17,19 @@ namespace OpenMined.Syft.Tensor
 
             IntTensor result = factory.Create(this.shape);
             result.Data = data.AsParallel().Select(x => x + value).ToArray();
+
+            return result;
+        }
+
+        public FloatTensor Acos(bool inline = false)
+        {
+            FloatTensor result = factory.ctrl.floatTensorFactory.Create(this.shape);
+
+            if (dataOnGpu)
+            {
+                throw new NotImplementedException();
+            }
+            result.Data = data.AsParallel().Select(x => (float)Math.Acos((double)x)).ToArray();
 
             return result;
         }
@@ -73,6 +86,17 @@ namespace OpenMined.Syft.Tensor
             return result;
         }
 
+        public FloatTensor Sinh(bool inline = false)
+        {
+            FloatTensor result = factory.ctrl.floatTensorFactory.Create(shape);
+            if (dataOnGpu)
+            {
+                throw new NotImplementedException();
+            }
+            result.Data = data.AsParallel().Select(x => (float) Math.Sinh((double) x)).ToArray();
+            return result;
+        }
+
         public FloatTensor Cos(bool inline = false)
         {
             FloatTensor result = factory.ctrl.floatTensorFactory.Create(shape);
@@ -85,7 +109,7 @@ namespace OpenMined.Syft.Tensor
             result.Data = data.AsParallel().Select(x => (float)Math.Cos((float)x)).ToArray();
             return result;
         }
-        
+
         public IntTensor Eq(IntTensor other, bool inline = false)
         {
             // Run argument checks on CPU
@@ -96,8 +120,40 @@ namespace OpenMined.Syft.Tensor
             if (other == null)
                 throw new ArgumentNullException();
 
+            IntTensor result;
+
             if (dataOnGpu) {
-                throw new NotImplementedException();
+              if (!inline){
+                result = factory.Create(this.shape);
+
+                // assign the gpu
+                result.Gpu(shader);
+
+                // find the id corresponding to the operation
+                int kernel_id = shader.FindKernel("EqElemInt");
+
+                // associate arrays with gpu
+                shader.SetBuffer(kernel_id, "EqElemIntDataSelf", this.DataBuffer);
+                shader.SetBuffer(kernel_id, "EqElemIntDataOther", other.DataBuffer);
+                shader.SetBuffer(kernel_id, "EqElemIntDataResult", result.DataBuffer);
+
+                // launch kernel
+                shader.Dispatch(kernel_id, this.size, 1, 1);
+
+                return result;
+              }
+              else {
+                int kernel_id = shader.FindKernel("EqElemInt_");
+
+                // associate resources
+                shader.SetBuffer(kernel_id, "EqElemIntDataSelf_", this.DataBuffer);
+                shader.SetBuffer(kernel_id, "EqElemIntDataOther_", other.DataBuffer);
+
+                // launch kernel
+                shader.Dispatch(kernel_id, this.size, 1, 1);
+
+                return this;
+              }
             }
             else {
                 if (inline) {
@@ -106,7 +162,7 @@ namespace OpenMined.Syft.Tensor
                     return this;
                 }
                 else {
-                    IntTensor result = factory.Create(this.shape);
+                    result = factory.Create(this.shape);
                     result.Data = data.AsParallel().Zip( other.Data.AsParallel(),
                                                         (a, b) => a == b ? 1 : 0 ).ToArray();
                     return result;
@@ -114,13 +170,26 @@ namespace OpenMined.Syft.Tensor
             }
         }
 
-
+       
         public IntTensor View(int[] new_shape, bool inline = true)
         {
             if (!IsContiguous())
             {
                 throw new InvalidOperationException("Tensor must be contiguous, call Contiguous() to convert");
             }
+            // suppport for -1 parameter value in new_shape
+            var index = Array.IndexOf(new_shape, -1);
+            if(index != -1)
+            {
+                int tempSize = 1;
+                foreach(var s in new_shape)
+                {
+                    if (s != -1)
+                        tempSize *= s;
+                }
+                new_shape[index] = size / tempSize;
+            }
+
             if (inline == true)
             {
 
@@ -141,7 +210,9 @@ namespace OpenMined.Syft.Tensor
             }
             else
             {
-                throw new NotImplementedException();
+                IntTensor result = factory.Create(new_shape);
+                result.Add(this, inline: true);
+                return result;
             }
 
         }
@@ -200,6 +271,36 @@ namespace OpenMined.Syft.Tensor
             }
         }
 
+        public IntTensor Max(IntTensor other, bool inline = false)
+        {
+            // Run argument checks on CPU anyway just to make sure
+            if (!this.shape.SequenceEqual(other.shape))
+                throw new ArgumentException("Tensor dimensions must match");
+
+            if (other == null)
+                throw new ArgumentNullException();
+
+            if (dataOnGpu)
+            {
+                throw new NotImplementedException();
+            }
+            else
+            {
+                if (inline)
+                {
+                    this.Data = data.AsParallel().Zip(other.Data.AsParallel(),
+                                                        (a, b) => (int)Math.Max(a, b)).ToArray();
+                    return this;
+                }
+                else
+                {
+                    IntTensor result = factory.Create(this.shape);
+                    result.Data = data.AsParallel().Zip(other.Data.AsParallel(),
+                                                        (a, b) => (int)Math.Max(a, b)).ToArray();
+                    return result;
+                }
+            }
+        }
         public IntTensor Sign(bool inline = false)
         {
             IntTensor result = factory.Create(this.shape);
@@ -385,6 +486,184 @@ namespace OpenMined.Syft.Tensor
 
             var stride = strides[0] + strides[1];
             return Enumerable.Range(0, shape.Min()).AsParallel().Select(i => this[i * stride]).Sum();
+        }
+
+        public IntTensor TopK(int k, int dim = -1, bool largest = true , bool sorted= true,  bool inline = false)
+        {
+            if (dataOnGpu)
+            {
+                throw new NotImplementedException();
+            }
+            
+            if (dim < 0)
+            {
+                //e.g 5 + (-1) = 4
+                dim = this.shape.Length + dim; 
+            }
+            // check if dim and k match the tensor shape
+            if (dim >= this.shape.Length)
+            {
+                throw new ArgumentException("dimension out of range");
+            }
+            else if (k == this.shape[dim] )
+            {
+                if (inline)
+                {
+                    throw new NotImplementedException();
+                }
+                if (sorted)
+                {
+                    IntTensor tempResult =  factory.Create(this.shape,data);
+                    /**
+                    TODO sort based on dimension 
+                    Example. shape 2x2
+                    data = [[3,7],[4,2]] 
+
+                    # Exacted behaviour as pytorch
+                    if dim = 0:
+                        result = [[4,2],[3,7]] 
+                    if dim = 1:
+                        result = [[3,7],[2,4]] 
+                    
+                    Actual
+                    if dim = 0:
+                        result = [[2,3],[4,7]] 
+                    if dim = 1:
+                        result = [[2,3],[4,7]] 
+
+                    **/ 
+                    tempResult.Sort();
+                    return tempResult;
+                } 
+            } 
+            else if (k > this.shape[dim] ) 
+            {
+                throw new ArgumentException("k not in range for dimension");
+            }
+            
+            // find the top k and saved them in output variable
+            int[] new_shape = (int[]) this.shape.Clone();
+            new_shape[dim] = k; 
+            IntTensor result =  factory.Create(new_shape);
+            int[] dim_indices = new int[this.strides.Length];
+
+            /***
+            Example of minMax output
+            // shape 2x3x3
+            tensor = {{{1,2,3},{4,5,6},{7,8,9}},{{10,11,12},{13,14,15},{16,17,18}} } 
+            dim = 1
+            k = 2
+            // The new shape returnd = 2x2x3 
+            minMax = {
+                    '00'  , {7, 4},
+                    '01'  , {8, 5},
+                    '02'  , {9, 6} ,
+                    '10'  , {16, 13},
+                    '11'  , {17, 14},
+                    '12'  , {18, 15}
+                }     
+             */
+             // minMax hold either min or max value  depeneds on `largest` value, e.g. if largest == true then remove min values 
+            var minMax = new Dictionary<String, List<int> >();
+          
+            for (int i =0 ; i< this.data.Length ; i++)
+            {   
+                // minMaxKey will be empyt for one dimensional array
+                var minMaxKey =  "";
+               
+                // get the this data array dimension indice for one or more dimensional array
+                this.DataIndex2DimIndices(i,ref dim_indices);
+                for (int d =0 ; d< dim_indices.Length ; d++)
+                {
+                    if (d != dim )
+                    {
+                        minMaxKey +=  dim_indices[d].ToString();
+                       
+                    }
+                }
+                var minMaxValue = new List<int>(){this.data[this.DimIndices2DataIndex(ref dim_indices)]};
+                if (dim_indices[dim] <= result.shape[dim] - 1)
+                {
+                    if (!minMax.ContainsKey(minMaxKey))
+                    {   
+                        minMax.Add(minMaxKey,minMaxValue);
+                    }else{
+                        minMax[minMaxKey].Add(minMaxValue[0]);
+                    }      
+                }
+                else
+                {
+                    if (!minMax.ContainsKey(minMaxKey))
+                    {   
+                        minMax.Add(minMaxKey,minMaxValue);
+                    }
+                    else
+                    {
+                        var list = minMax[minMaxKey];
+                        if(largest)
+                        {
+                            var listMin = list.Min();
+                            if (listMin < minMaxValue[0])
+                            {
+                                list[list.IndexOf(listMin)] = minMaxValue[0];
+                            }
+                        }
+                        else
+                        {
+                            var listMax = list.Max();
+                            if (listMax > minMaxValue[0])
+                            {
+                                list[list.IndexOf(listMax)] = minMaxValue[0];
+                            }
+                        } 
+                    }
+                }
+            }
+            // convert mimMax to result.Data
+            foreach (var pair in minMax)
+            { 
+                for( var d=0; d < pair.Value.Count ; d++)
+                {
+                    // complete the key (e.g. pair.Key = '01', key = '010' where dim = 2, d= 0)
+                    var key = pair.Key.Insert(dim,d.ToString());
+                    // convert string to array
+                    dim_indices = key.Select(n => (int)Char.GetNumericValue(n)).ToArray();
+                    // set value 
+                    result.Data[result.DimIndices2DataIndex(ref dim_indices)] = pair.Value[d];   
+                } 
+            }
+
+            if (sorted)
+            {
+                /**
+                    TODO sort based on dimension 
+                    Example. shape 2x2
+                    data = [[3,7],[4,2]] 
+
+                    # Exacted behaviour as pytorch
+                    if dim = 0:
+                        result = [[4,2],[3,7]] 
+                    if dim = 1:
+                        result = [[3,7],[2,4]] 
+                    
+                    Actual
+                    if dim = 0:
+                        result = [[2,3],[4,7]] 
+                    if dim = 1:
+                        result = [[2,3],[4,7]] 
+
+                **/ 
+                result.Sort();
+            }
+
+            if (inline)
+            {
+                throw new NotImplementedException();
+            }else
+            {
+                return result;
+            }
+            
         }
 
         // closes class and namespace

@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 
 using OpenMined.Network.Controllers;
 
-namespace OpenMined.Network.Servers
+namespace OpenMined.Network.Servers.Ipfs
 {
     public class Ipfs
     {
