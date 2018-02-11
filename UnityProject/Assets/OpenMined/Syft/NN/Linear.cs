@@ -119,10 +119,10 @@ namespace OpenMined.Syft.Layer
             return _biased ? _weights.Size + _bias.Size : _weights.Size;
         }
 
-	  public override JToken GetConfig()
-    {
-		  var config = new JObject
-			{
+	    public override JToken GetConfig()
+        {
+		    var config = new JObject
+		    {
 			    { "name", "linear" },
 				{ "trainable", true },
 				{ "dtype", "float32" }, 
@@ -178,10 +178,10 @@ namespace OpenMined.Syft.Layer
 				OpType = "Gemm",
 				DocString = ""
 			};
-      if (_biased)
-      {
-        node.Input.Add(_bias.Id.ToString());
-      }
+            if (_biased)
+            {
+                node.Input.Add(_bias.Id.ToString());
+            }
       
 			node.Attribute.Add(new AttributeProto{
 				Name = "alpha",
@@ -206,30 +206,30 @@ namespace OpenMined.Syft.Layer
 
 			GraphProto g =  new GraphProto
 			{
-        Name = Guid.NewGuid().ToString("N"),
-				Node = { node },
-				Initializer = { w_init },
-				Input = { input_info, w_info },
-				Output = { ctrl.floatTensorFactory.Get(activation).GetValueInfoProto() },
+                Name = Guid.NewGuid().ToString("N"),
+				    Node = { node },
+				    Initializer = { w_init },
+				    Input = { input_info, w_info },
+				    Output = { ctrl.floatTensorFactory.Get(activation).GetValueInfoProto() },
 			};
 
-      if (_biased)
-      {
-        TensorProto b_init = _bias.GetProto();
-        ValueInfoProto b_info = _bias.GetValueInfoProto();
-        g.Initializer.Add(b_init);
-        g.Input.Add(b_info);
-      }
-      else
-      {
-        // The Gemm schema, must have 3 inputs (must have a bias)
-        float[] tmpData = new float[1] {0};
-        int[] tmpDims = new int[1] {1};
-        FloatTensor tmpBias = ctrl.floatTensorFactory.Create(_data: tmpData, _shape: tmpDims, _autograd: false, _keepgrads: false);
-        g.Initializer.Add(tmpBias.GetProto());
-        g.Input.Add(tmpBias.GetValueInfoProto());
-        g.Node[0].Input.Add(tmpBias.Id.ToString());
-      }
+            if (_biased)
+            {
+                TensorProto b_init = _bias.GetProto();
+                ValueInfoProto b_info = _bias.GetValueInfoProto();
+                g.Initializer.Add(b_init);
+                g.Input.Add(b_info);
+            }
+            else
+            {
+                // The Gemm schema, must have 3 inputs (must have a bias)
+                float[] tmpData = new float[1] {0};
+                int[] tmpDims = new int[1] {1};
+                FloatTensor tmpBias = ctrl.floatTensorFactory.Create(_data: tmpData, _shape: tmpDims, _autograd: false, _keepgrads: false);
+                g.Initializer.Add(tmpBias.GetProto());
+                g.Input.Add(tmpBias.GetValueInfoProto());
+                g.Node[0].Input.Add(tmpBias.Id.ToString());
+            }
 
 			return g;
 		}

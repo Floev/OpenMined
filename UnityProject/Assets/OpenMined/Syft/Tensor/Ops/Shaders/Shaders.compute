@@ -206,8 +206,8 @@ void AddMMT_ (uint3 id : SV_DispatchThreadID) {
 	int N = AddmmtDimensionsN_[0];
 	int O = AddmmtDimensionsO_[0];
 
-	int j = id % O;
-	int i = (id - j) / M;
+	int j = id.x % O;
+	int i = (id.x - j) / M;
 	int Bid = i * N;
 	int Cid = j * N;
 	for (int l = 0; l < N; l++)

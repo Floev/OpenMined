@@ -300,10 +300,18 @@ namespace OpenMined.Network.Controllers
     public class IpfsJobConfig
     {
         [SerializeField] public float lr;
+        public string criterion;
+        public int iters;
 
         public IpfsJobConfig(float lr)
         {
             this.lr = lr;
+        }
+
+        public IpfsJobConfig(float lr, string criterion, int iters) : this(lr)
+        {
+            this.criterion = criterion;
+            this.iters = iters;
         }
     }
 }
