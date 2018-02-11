@@ -3,6 +3,7 @@ using OpenMined.Network.Controllers;
 using OpenMined.Syft.Tensor;
 using UnityEngine;
 using Newtonsoft.Json.Linq;
+using OpenMined.Protobuf.Onnx;
 
 namespace OpenMined.Syft.Layer
 {
@@ -43,6 +44,36 @@ namespace OpenMined.Syft.Layer
             };
 
             return config;
+        }
+
+        // See https://github.com/onnx/onnx/blob/master/docs/Operators.md#Log
+        public override GraphProto GetProto(int inputTensorId, SyftController ctrl)
+        {
+            FloatTensor input_tensor = ctrl.floatTensorFactory.Get(inputTensorId);
+            if (activation != null)
+            {
+                this.Forward(input_tensor);
+            }
+
+            NodeProto node = new NodeProto
+            {
+                Input = { inputTensorId.ToString() },
+                Output = { activation.ToString() },
+                OpType = "Log",
+            };
+
+            ValueInfoProto input_info = input_tensor.GetValueInfoProto();
+
+            GraphProto g =  new GraphProto
+            {
+                Name = Guid.NewGuid().ToString("N"),
+                Node = { node },
+                Initializer = {  },
+                Input = { input_info },
+                Output = { ctrl.floatTensorFactory.Get(activation).GetValueInfoProto() },
+            };
+
+            return g;            
         }
     }
 }

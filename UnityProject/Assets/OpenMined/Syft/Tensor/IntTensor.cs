@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using OpenMined.Syft.Tensor.Factories;
 using System.Linq;
 using System.Threading.Tasks;
+using OpenMined.Protobuf.Onnx;
 
 namespace OpenMined.Syft.Tensor
 {
@@ -157,6 +158,11 @@ namespace OpenMined.Syft.Tensor
                     var result = this.Abs(inline:true);
                     return result.id + "";
                 }
+                case "acos":
+                {
+                    var result = Acos();
+                    return result.Id.ToString();
+                }
                 case "lt":
                 {
                     var compareToTensor = factory.Get(int.Parse(msgObj.tensorIndexParams[0]));
@@ -169,6 +175,14 @@ namespace OpenMined.Syft.Tensor
                     this.Lt(compareToTensor, inline: true);
                     return this.id + "";
                 }
+
+                case "max_":
+                {
+                    var compareToTensor = factory.Get(int.Parse(msgObj.tensorIndexParams[0]));
+                    this.Max(compareToTensor, inline: true);
+                    return this.id + "";
+                }
+
                 case "add_elem":
                 {
                     Debug.LogFormat("add_elem");
@@ -358,6 +372,11 @@ namespace OpenMined.Syft.Tensor
                      var result = Sin();
                      return result.Id.ToString();
                 }
+                case "sinh":
+                {
+                    var result = Sinh();
+                    return result.Id.ToString();
+                }
 				case "neg":
 				{
 					Debug.LogFormat("neg");
@@ -375,7 +394,7 @@ namespace OpenMined.Syft.Tensor
                 {
                     if (DataOnGpu)
                     {
-                        var tmpData = new float[size];
+                        var tmpData = new int[size];
                         dataBuffer.GetData(tmpData);
                         return string.Join(" ", tmpData);
 
@@ -390,6 +409,16 @@ namespace OpenMined.Syft.Tensor
                 {
                     var result = Tan();
                     return result.Id.ToString();
+                }
+                case "top_k":
+                {
+                    Debug.LogFormat("top_k");
+                    int k =int.Parse(msgObj.tensorIndexParams[0]);
+                    int dim  =int.Parse(msgObj.tensorIndexParams[1]);
+                    bool largest  =bool.Parse(msgObj.tensorIndexParams[2]);
+                    bool sorted =bool.Parse(msgObj.tensorIndexParams[3]);
+                    IntTensor result = this.TopK(k,dim,largest,sorted);
+                    return result.id + "";
                 }
                 case "trace":
                 {
@@ -409,8 +438,81 @@ namespace OpenMined.Syft.Tensor
                             return Transpose().Id.ToString();
                         }
                 }
+                
+                case "view":
+                {
+                    int[] new_dims = new int[msgObj.tensorIndexParams.Length];
+                    for (int i = 0; i < msgObj.tensorIndexParams.Length; i++)
+                    {
+                        new_dims[i] = int.Parse(msgObj.tensorIndexParams[i]);
+                    }
+                    var result = View(new_dims);
+                    return result.Id.ToString();
+                }
+
+                case "view_":
+                {
+                    int[] new_dims = new int[msgObj.tensorIndexParams.Length];
+                    for (int i = 0; i < msgObj.tensorIndexParams.Length; i++)
+                    {
+                        new_dims[i] = int.Parse(msgObj.tensorIndexParams[i]);
+                    }
+                    View(new_dims, inline: true);
+                    return Id.ToString();
+                }
+                
+                case "to_numpy_by_proto":
+                {
+                    return this.GetProto().ToString();
+                }
             }
             return "IntTensor.processMessage: Command not found:" + msgObj.functionCall;
+        }
+
+        public TensorProto GetProto()
+        {
+            // TensorProto t = base.ToProto();
+            int[] tmpData;
+            if (DataOnGpu)
+            {
+                tmpData = new int[size];
+                dataBuffer.GetData(tmpData);
+            }
+            else
+            {
+                tmpData = Data;
+            }
+            TensorProto t = new TensorProto
+            {   
+                Dims = { Array.ConvertAll(this.Shape, val => (long)val) },
+                DataType = TensorProto.Types.DataType.Int32,
+                Int32Data = { tmpData },
+                Name = this.Id.ToString(),
+                DocString = "",
+            };
+
+            return t;
+        }
+
+        public ValueInfoProto GetValueInfoProto ()
+        {
+            ValueInfoProto i = new ValueInfoProto
+            {
+                Name = this.Id.ToString(),
+                Type = new TypeProto
+                {
+                    TensorType = new TypeProto.Types.Tensor
+                    {
+                        ElemType = TensorProto.Types.DataType.Int32,
+                        Shape = new TensorShapeProto
+                        {
+                            Dim = { Array.ConvertAll(this.Shape, val => new TensorShapeProto.Types.Dimension { DimValue = val }) }
+                        }
+                    }
+                }
+            };
+
+            return i;
         }
 
     }

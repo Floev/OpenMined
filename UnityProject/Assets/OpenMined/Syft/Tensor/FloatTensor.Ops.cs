@@ -1344,18 +1344,18 @@ namespace OpenMined.Syft.Tensor
             return Reduce(dim, keepdim, (acc, val, index, arr) => acc * val, (val, len) => val, creation_op:"prod_"+dim+"_"+keepdim);
         }
 
-        public FloatTensor Random(int[] dims, float start = 0F, float? to = null, bool inline = true)
+        public FloatTensor Random(int[] dims, int start = 0, int? to = null, bool inline = true)
         {
             // when "to" is not set use 2^mantissa as max value to ensure every value is representable
             // Reference: http://pytorch.org/docs/master/tensors.html#torch.Tensor.random_
-            float to_ = 0F;
+            int to_ = 0;
             if (to == null)
             {
-                to_ = (float)Mathf.Pow(2F, 24F);
+                to_ = (int)Mathf.Pow(2, 24);
             }
             else
             {
-                to_ = (float)to;
+                to_ = (int)to;
             }
             int[] dims_prod = {1};
             foreach (int dim in dims)

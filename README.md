@@ -26,7 +26,7 @@ Unity has a few advantages that we are leveraging for this project
 
 1. It's portable.
 2. It's free
-3. It has versitile GPU access.  
+3. It has versatile GPU access.  
 4. It can be used for high end graphics gaming consoles (Playstation, XBox, etc)
 
 More about this in the [corresponding file](https://github.com/OpenMined/OpenMined/blob/master/tutorials/WhyUnity.md) at tutorials folder
@@ -63,7 +63,7 @@ The steps come in two parts:
         - In the Inspector, expand `Resolution` and check the box for `Run in Background`
 
     - **Linux:**
-    http://beta.unity3d.com/download/ee86734cf592/public_download.html  
+      https://beta.unity3d.com/download/7807bc63c3ab/public_download.html
 2. Open project in Unity `[Open(Top Right of Home Screen) -> Directory/To/OpenMined -> /UnityProject]`
 3. In the Project Pane (usually below), double click OpenMinedMain. If you can't find the file for some reason, check the trouble shooting section.
 4. Hit `Play` on the Unity Editor
