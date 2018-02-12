@@ -33,7 +33,7 @@ namespace OpenMined.Syft.Tensor.Factories
         {
             //Debug.LogFormat("<color=purple>Removing Tensor {0}</color>", id);
 
-            var tensor = tensors [id];           
+            var tensor = tensors [id];
             
             tensors.Remove (id);
             tensor.Dispose();

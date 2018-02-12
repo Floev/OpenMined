@@ -270,48 +270,4 @@ namespace OpenMined.Network.Controllers
     public interface LayerDefinition {
         string GetLayerDefinition();
     }
-
-    public class IpfsExperiment
-    {
-        public string[] jobs;
-
-        public IpfsExperiment (string[] jobs)
-        {
-            this.jobs = jobs;
-        }
-    }
-
-    public class IpfsJob
-    {
-        public string input;
-        public string target;
-        public JToken Model;
-        public IpfsJobConfig config;
-
-        public IpfsJob (string input, string target, JToken model, IpfsJobConfig config)
-        {
-            this.input = input;
-            this.target = target;
-            this.Model = model;
-            this.config = config;
-        }
-    }
-
-    public class IpfsJobConfig
-    {
-        [SerializeField] public float lr;
-        public string criterion;
-        public int iters;
-
-        public IpfsJobConfig(float lr)
-        {
-            this.lr = lr;
-        }
-
-        public IpfsJobConfig(float lr, string criterion, int iters) : this(lr)
-        {
-            this.criterion = criterion;
-            this.iters = iters;
-        }
-    }
 }
