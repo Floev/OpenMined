@@ -16,9 +16,15 @@ namespace OpenMined.Syft.Tensor
             }
 
             IntTensor result = factory.Create(this.shape);
-            result.Data = data.AsParallel().Select(x => x + value).ToArray();
-
-            return result;
+            if (inline) {
+                Data = data.AsParallel().Select(x => x + value).ToArray();
+                return this;
+            }
+            else
+            {
+                result.Data = data.AsParallel().Select(x => x + value).ToArray();
+                return result;
+            }
         }
 
         public FloatTensor Acos(bool inline = false)
@@ -27,7 +33,8 @@ namespace OpenMined.Syft.Tensor
 
             if (dataOnGpu)
             {
-                throw new NotImplementedException();
+                result.Gpu(shader);
+                return AcosGPU (result);
             }
             result.Data = data.AsParallel().Select(x => (float)Math.Acos((double)x)).ToArray();
 
@@ -48,9 +55,15 @@ namespace OpenMined.Syft.Tensor
             else
             {
                 // run Addition on the CPU
-                result.Data = data.AsParallel().Zip(x.Data.AsParallel(), (a, b) => a + b).ToArray();
-
-                return result;
+                if (inline) {
+                    Data = data.AsParallel().Zip(x.Data.AsParallel(), (a, b) => a + b).ToArray();
+                    return this;
+                }
+                else
+                {
+                    result.Data = data.AsParallel().Zip(x.Data.AsParallel(), (a, b) => a + b).ToArray();
+                    return result;
+                }
             }
 
         }
@@ -329,6 +342,41 @@ namespace OpenMined.Syft.Tensor
             return result;
         }
 
+
+        // Function called by Exp to handle Integer Overflow
+        private int handleOverFlow(int x)
+        {
+            try
+            {
+                //check for Integer overflow
+                checked
+                {
+                    return (int)Math.Exp(x);
+                }
+            }
+            catch(System.OverflowException e)
+            {
+                // There is no Integer Infinity Supported in C#
+                // You can throw an exception or return the Max Value of an integer
+                //throw new OverflowException();
+                return int.MaxValue;
+            }
+        }
+
+        public IntTensor Exp(bool inline = false)
+        {
+
+            if (dataOnGpu)
+            {
+                throw new NotImplementedException();
+            }
+
+            IntTensor result = factory.Create(this.shape);
+            result.Data = data.AsParallel().Select(x => handleOverFlow(x)).ToArray();
+
+            return result;
+        }
+
         public IntTensor Neg(bool inline = false, IntTensor result = null)
         {
             if (dataOnGpu)
@@ -486,6 +534,67 @@ namespace OpenMined.Syft.Tensor
 
             var stride = strides[0] + strides[1];
             return Enumerable.Range(0, shape.Min()).AsParallel().Select(i => this[i * stride]).Sum();
+        }
+
+        public IntTensor Unfold(int dim, int size, int step, bool inline = false)
+        {
+            // Getting the number of new tensors to add
+            int new_dim_size = Mathf.CeilToInt ((this.shape [dim] - size + 1) / (float)step);
+            
+            // Declaring required variables
+            int[] new_shape = new int[this.shape.Count() + 1];
+            long newTensorSize = 1;
+            int dimSize = this.shape[dim];
+            int sizeBeforeDim = 1;
+            int sizeAfterDim = 1;
+
+            for(int i=0; i < new_shape.Count(); i++){
+                if (i == 0){
+                    new_shape[i] = new_dim_size;
+                }
+                else if ((i - 1) == dim){
+                    new_shape[i] = size;
+                } else {
+                    new_shape[i] = this.shape[i-1];
+                }
+                
+                if ((i != 0) && ((i-1) < dim)){
+                    sizeBeforeDim *= new_shape[i];
+                }
+                if ((i-1) > dim){
+                    sizeAfterDim *= new_shape[i];
+                }
+
+                newTensorSize *= new_shape[i];
+            }
+            
+            if (dataOnGpu) {
+                if (inline){
+                    throw new NotImplementedException ();
+                } else {
+                    return UnfoldGPU(new_shape, size, dimSize, sizeBeforeDim, sizeAfterDim, step);
+                }
+            } else {
+                if (inline) {
+                    throw new NotImplementedException ();
+                } else {
+                    IntTensor result = factory.Create (new_shape);
+                    Parallel.For(0, newTensorSize, index => {
+                        // Calculating the offset due to step
+                        int currentStep = (int) (index/(sizeBeforeDim * size * sizeAfterDim));
+                        int updatedIndex = (int) (index % (sizeBeforeDim * size * sizeAfterDim));
+                        int stepOffset = currentStep * sizeAfterDim * step;
+
+                        // Calculating the offset due to size difference of dim
+                        int sizeIndex = (int) (updatedIndex/(size * sizeAfterDim));
+                        int sizeOffset = sizeIndex * (dimSize - size) * sizeAfterDim;
+
+                        int indexToQuery = updatedIndex + stepOffset + sizeOffset;
+                        result.data[index] = data[indexToQuery];
+                    });
+                    return result;
+                }
+            }
         }
 
         public IntTensor TopK(int k, int dim = -1, bool largest = true , bool sorted= true,  bool inline = false)

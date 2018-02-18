@@ -1,21 +1,18 @@
 using System;
 using UnityEngine;
-using UnityEditor;
 using NUnit.Framework;
 using OpenMined.Network.Controllers;
-using OpenMined.Syft.Tensor;
 using OpenMined.Network.Servers;
-using UnityEditor.VersionControl;
 
-namespace OpenMined.Tests.Editor.FloatTensorTests
+namespace OpenMined.Tests.Tensor.FloatTensor
 {
-    [Category("FloatTensorGPUTests")]
-    public class FloatTensorGPUTest
+    [Category("GPUTest")]
+    public class GPUTest
     {
         public SyftController ctrl;
         public ComputeShader shader;
 
-        public void AssertEqualTensorsData(OpenMined.Syft.Tensor.FloatTensor t1, OpenMined.Syft.Tensor.FloatTensor t2, double delta = 0.0d)
+        public void AssertEqualTensorsData(Syft.Tensor.FloatTensor t1, Syft.Tensor.FloatTensor t2, double delta = 0.0d)
         {
             float[] data1 = new float[t1.Size];
             t1.DataBuffer.GetData(data1);
@@ -276,9 +273,6 @@ namespace OpenMined.Tests.Editor.FloatTensorTests
 
             tensor1.Gpu(shader);
             tensor2.Gpu(shader);
-
-            Debug.LogFormat("T2 transposed{0}", tensor2.Transpose().Print());
-            Debug.LogFormat("T2 {0}", tensor2.Print());
 
             base1.AddMMT(tensor1, tensor2.Transpose());
             base2.AddMMT(tensor2, tensor1.Transpose());
@@ -1949,8 +1943,6 @@ namespace OpenMined.Tests.Editor.FloatTensorTests
             transpose.Gpu(shader);
 
             var transposed = tensor.Transpose();
-            Debug.LogFormat("In: {0}", tensor.Print());
-            Debug.LogFormat("Out: {0}", transposed.Print());
             AssertEqualTensorsData(transpose, transposed);
         }
 
@@ -1970,8 +1962,6 @@ namespace OpenMined.Tests.Editor.FloatTensorTests
             transpose.Gpu(shader);
 
             var transposed = tensor.Transpose(0, 2);
-            Debug.LogFormat("In: {0}", tensor.Print());
-            Debug.LogFormat("Out: {0}", transposed.Print());
 
             AssertEqualTensorsData(transpose, transposed);
         }

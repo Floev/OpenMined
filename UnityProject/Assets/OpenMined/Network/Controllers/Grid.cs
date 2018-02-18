@@ -231,31 +231,15 @@ namespace OpenMined.Network.Controllers
                     case "Linear":
                         // weight float tensor
                         var weightData = layer.SelectToken("config.weights.data").ToObject<float[]>();
-                        var weightShape = layer.SelectToken("config.weights.shape").ToObject<int[]>();
-                        var weightTensor = controller.floatTensorFactory.Create(_data: weightData, _shape: weightShape, _autograd: true);
 
-                        // bias float tensor
-
-                        Linear linear = null;
+                        var input = layer.SelectToken("config.input").ToObject<int>();
+                        var output = layer.SelectToken("config.output").ToObject<int>();
+                        float[] biasData = null;
                         if (layer.SelectToken("config.bias") == null)
                         {
-                            var biasData = layer.SelectToken("config.bias.data").ToObject<float[]>();
-                            var biasShape = layer.SelectToken("config.bias.shape").ToObject<int[]>();
-                            var biasTensor = controller.floatTensorFactory.Create(_data: biasData, _shape: biasShape, _autograd: true);
-
-                            var input = layer.SelectToken("config.input").ToObject<int>();
-                            var output = layer.SelectToken("config.output").ToObject<int>();
-
-                            linear = new Linear(controller, input: input, output: output, weights: weightTensor, bias: biasTensor);
+                            biasData = layer.SelectToken("config.bias.data").ToObject<float[]>();
                         }
-                        else
-                        {
-                            var input = layer.SelectToken("config.input").ToObject<int>();
-                            var output = layer.SelectToken("config.output").ToObject<int>();
-
-                            linear = new Linear(controller, input: input, output: output, weights: weightTensor);
-                        }
-
+                        Linear linear = new Linear(controller, input: input, output: output, weights: weightData, bias: biasData);
                         seq.AddLayer(linear);
                         break;
                     case "ReLU":

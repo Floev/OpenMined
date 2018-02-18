@@ -1,21 +1,17 @@
-using System;
 using UnityEngine;
-using UnityEditor;
 using NUnit.Framework;
 using OpenMined.Network.Controllers;
-using OpenMined.Syft.Tensor;
 using OpenMined.Network.Servers;
-using UnityEditor.VersionControl;
 
-namespace OpenMined.Tests.Editor.IntTensorTests
+namespace OpenMined.Tests.Tensor.IntTensor
 {
-    [Category("IntTensorGPUTests")]
-    public class IntTensorGPUTest
+    [Category("GPUTest")]
+    public class GPUTest
     {
         public SyftController ctrl;
         public ComputeShader shader;
 
-        public void AssertEqualTensorsData(IntTensor t1, IntTensor t2, double delta = 0.0d)
+        public void AssertEqualTensorsData(Syft.Tensor.IntTensor t1, Syft.Tensor.IntTensor t2, double delta = 0.0d)
         {
 
             int[] data1 = new int[t1.Size];
@@ -36,7 +32,7 @@ namespace OpenMined.Tests.Editor.IntTensorTests
             }
         }
 
-        public void AssertApproximatelyEqualTensorsData(IntTensor t1, IntTensor t2)
+        public void AssertApproximatelyEqualTensorsData(Syft.Tensor.IntTensor t1, Syft.Tensor.IntTensor t2)
         {
             AssertEqualTensorsData(t1, t2, .0001f);
         }
@@ -126,6 +122,24 @@ namespace OpenMined.Tests.Editor.IntTensorTests
             tensor1.Abs(inline: true);
 
             AssertEqualTensorsData(expectedTensor1, tensor1);
+        }
+
+        [Test]
+        public void Acos()
+        {
+            int[] data1 = { 1, 0, -1, 1, 1, 0 };
+            int[] shape1 = { 6 };
+            var tensor1 = ctrl.intTensorFactory.Create(_data: data1, _shape: shape1);
+            tensor1.Gpu(shader);
+
+            float[] data2 = { 0, 1.57079633f, 3.14159265f, 0, 0, 1.57079633f };
+            int[] shape2 = { 6 };
+            var expectedTensor = ctrl.floatTensorFactory.Create(_data: data2, _shape: shape2);
+            expectedTensor.Gpu(shader);
+
+            var acosTensor = tensor1.Acos();
+
+            AssertApproximatelyEqualTensorsData(acosTensor,expectedTensor);
         }
 
         [Test]
@@ -406,6 +420,42 @@ namespace OpenMined.Tests.Editor.IntTensorTests
 
             tensor1.View(shape2, inline: true);
             AssertEqualTensorsData(expectedIntTesnor, tensor1);
+        }
+
+        [Test]
+        public void Unfold()
+        {
+            int[] input_data = {-1, 2, 3, 5, 0, 4, 6, 7, 10, 3, 2, -5};
+            int[] input_shape = {3, 4};
+
+            var input_tensor = ctrl.intTensorFactory.Create(_data: input_data, _shape: input_shape);
+            input_tensor.Gpu(shader);
+
+            // Test1
+            int dim = 0;
+            int step = 1;
+            int size = 2;
+            int[] expected_data = {-1, 2, 3, 5, 0, 4, 6, 7, 0, 4, 6, 7, 10, 3, 2, -5};
+            int[] expected_shape = {2, 2, 4};
+            var expected_output_tensor = ctrl.intTensorFactory.Create(_data: expected_data, _shape: expected_shape);
+            expected_output_tensor.Gpu(shader);
+
+            var actual_output_tensor = input_tensor.Unfold(dim: dim, step: step, size: size);
+            
+            AssertEqualTensorsData(expected_output_tensor, actual_output_tensor);
+
+            // Test2
+            dim = 1;
+            step = 1;
+            size = 3;
+            int[] expected_data2 = {-1, 2, 3, 0, 4, 6, 10, 3, 2, 2, 3, 5, 4, 6, 7, 3, 2, -5};
+            int[] expected_shape2 = {2, 3, 3};
+            var expected_output_tensor2 = ctrl.intTensorFactory.Create(_data: expected_data2, _shape: expected_shape2);
+            expected_output_tensor2.Gpu(shader);
+
+            actual_output_tensor = input_tensor.Unfold(dim: dim, step: step, size: size);
+            
+            AssertEqualTensorsData(expected_output_tensor2, actual_output_tensor);
         }
         /* closes class and namespace */
     }

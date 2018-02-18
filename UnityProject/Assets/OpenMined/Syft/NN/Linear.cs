@@ -20,24 +20,37 @@ namespace OpenMined.Syft.Layer
         [SerializeField] public FloatTensor _weights;
         [SerializeField] FloatTensor _bias;
         private bool _biased;
+        private bool _fast;
 
         public Linear (SyftController _controller, int input, int output, string initializer="Xavier",
-            bool biased = false, float[] weights = null, float[] bias = null)
-		{
+            bool biased = false, float[] weights = null, float[] bias = null, bool fast = true)
+        {
             init(name);
 
 			this.controller = _controller;
-			
-			_input = input;
-			_output = output;
+
+            _input = fast ? output : input;
+            _output = fast ? input : output;
+            _fast = fast;
 
             _biased = biased || bias != null;
 
-            int[] weightShape = { input, output };
+            int[] weightShape = { _input, _output };
             if (weights == null)
             {
                 weights = initializer == "Xavier" ? controller.RandomWeights(input * output, input) : controller.RandomWeights(input * output);
-            };
+            }
+
+            if (_fast)
+            {
+                var new_weights = new float[weights.Length];
+                for (var idx = 0; idx < weights.Length; idx++)
+                {
+                    new_weights[(idx - (idx % output)) / output + input * (idx % output)] = weights[idx];
+                }
+                weights = new_weights;
+            }
+
             _weights = controller.floatTensorFactory.Create(_shape: weightShape, _data: weights, _autograd: true, _keepgrads: true);
 
             parameters.Add(_weights.Id);
@@ -54,61 +67,39 @@ namespace OpenMined.Syft.Layer
             controller.addModel(this);
         }
 
-        public Linear (SyftController _controller, int input, int output, FloatTensor weights, FloatTensor bias = null, string initializer="Xavier")
-        {
-            init(this.name);
-
-            this.controller = _controller;
-
-            _input = input;
-            _output = output;
-
-            _weights = weights;
-            _bias = bias;
-
-            parameters.Add(_weights.Id);
-
-            if (_bias != null)
-            {
-                parameters.Add(_bias.Id);
-            }
-
-            #pragma warning disable 420
-            id = System.Threading.Interlocked.Increment(ref nCreated);
-            controller.addModel(this);
-        }
-
 		// Overloading the constructor to load from an ONNX proto
 		public Linear (SyftController _controller, GraphProto graph)
 		{
-      init(this.name);
+            init(this.name);
 
 			this.controller = _controller;
 
-      _weights = ONNXTools.BuildFloatTensor(graph.Initializer[0], this.controller, autograd: true, keepgrads: true);
+            _weights = ONNXTools.BuildFloatTensor(graph.Initializer[0], this.controller, autograd: true, keepgrads: true);
 			AttributeProto transB = ONNXTools.FindAttribute(graph.Node[0], "transB");
 			if (transB != null && transB.I == 1)
 			{
 				_weights = _weights.Transpose();
 			}
-      parameters.Add(_weights.Id);
-      _input = _weights.Shape[0];
-      _output = _weights.Shape[1];
+            parameters.Add(_weights.Id);
+            _input = _weights.Shape[0];
+            _output = _weights.Shape[1];
 
       
-      _bias = ONNXTools.BuildFloatTensor(graph.Initializer[1], this.controller, autograd: true, keepgrads: true);
-      _biased = true;  
-      parameters.Add(_bias.Id);
+            _bias = ONNXTools.BuildFloatTensor(graph.Initializer[1], this.controller, autograd: true, keepgrads: true);
+            _biased = true;  
+            parameters.Add(_bias.Id);
       
 			#pragma warning disable 420
 			id = System.Threading.Interlocked.Increment(ref nCreated);
 			controller.addModel(this);
-		}
+        }
 
+        public override FloatTensor Forward(FloatTensor input)
+        {
+            FloatTensor output;
+            if (_fast) { output = input.MMT(_weights); }
+            else { output = input.MM(_weights); };
 
-    public override FloatTensor Forward(FloatTensor input)
-		{	
-			FloatTensor output = input.MM(_weights);
             if (_biased)
             {
                 output = output.Add(_bias.Expand(output.Shape).Contiguous());
@@ -128,10 +119,10 @@ namespace OpenMined.Syft.Layer
             return _biased ? _weights.Size + _bias.Size : _weights.Size;
         }
 
-	  public override JToken GetConfig()
-    {
-		  var config = new JObject
-			{
+	    public override JToken GetConfig()
+        {
+		    var config = new JObject
+		    {
 			    { "name", "linear" },
 				{ "trainable", true },
 				{ "dtype", "float32" }, 
@@ -187,10 +178,10 @@ namespace OpenMined.Syft.Layer
 				OpType = "Gemm",
 				DocString = ""
 			};
-      if (_biased)
-      {
-        node.Input.Add(_bias.Id.ToString());
-      }
+            if (_biased)
+            {
+                node.Input.Add(_bias.Id.ToString());
+            }
       
 			node.Attribute.Add(new AttributeProto{
 				Name = "alpha",
@@ -215,34 +206,32 @@ namespace OpenMined.Syft.Layer
 
 			GraphProto g =  new GraphProto
 			{
-        Name = Guid.NewGuid().ToString("N"),
-				Node = { node },
-				Initializer = { w_init },
-				Input = { input_info, w_info },
-				Output = { ctrl.floatTensorFactory.Get(activation).GetValueInfoProto() },
+                Name = Guid.NewGuid().ToString("N"),
+				    Node = { node },
+				    Initializer = { w_init },
+				    Input = { input_info, w_info },
+				    Output = { ctrl.floatTensorFactory.Get(activation).GetValueInfoProto() },
 			};
 
-      if (_biased)
-      {
-        TensorProto b_init = _bias.GetProto();
-        ValueInfoProto b_info = _bias.GetValueInfoProto();
-        g.Initializer.Add(b_init);
-        g.Input.Add(b_info);
-      }
-      else
-      {
-        // The Gemm schema, must have 3 inputs (must have a bias)
-        float[] tmpData = new float[1] {0};
-        int[] tmpDims = new int[1] {1};
-        FloatTensor tmpBias = ctrl.floatTensorFactory.Create(_data: tmpData, _shape: tmpDims, _autograd: false, _keepgrads: false);
-        g.Initializer.Add(tmpBias.GetProto());
-        g.Input.Add(tmpBias.GetValueInfoProto());
-        g.Node[0].Input.Add(tmpBias.Id.ToString());
-      }
+            if (_biased)
+            {
+                TensorProto b_init = _bias.GetProto();
+                ValueInfoProto b_info = _bias.GetValueInfoProto();
+                g.Initializer.Add(b_init);
+                g.Input.Add(b_info);
+            }
+            else
+            {
+                // The Gemm schema, must have 3 inputs (must have a bias)
+                float[] tmpData = new float[1] {0};
+                int[] tmpDims = new int[1] {1};
+                FloatTensor tmpBias = ctrl.floatTensorFactory.Create(_data: tmpData, _shape: tmpDims, _autograd: false, _keepgrads: false);
+                g.Initializer.Add(tmpBias.GetProto());
+                g.Input.Add(tmpBias.GetValueInfoProto());
+                g.Node[0].Input.Add(tmpBias.Id.ToString());
+            }
 
 			return g;
 		}
-
 	}
 }
-

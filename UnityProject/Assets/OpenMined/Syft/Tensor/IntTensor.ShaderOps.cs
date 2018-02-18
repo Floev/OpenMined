@@ -74,6 +74,16 @@ namespace OpenMined.Syft.Tensor
             return result;
         }
 
+        public FloatTensor AcosGPU(FloatTensor result)
+        {
+            int kernel_id = shader.FindKernel("AcosInt");
+
+            shader.SetBuffer(kernel_id, "AcosIntData",this.DataBuffer);
+            shader.SetBuffer(kernel_id, "AcosIntDataResult", result.DataBuffer);
+            shader.Dispatch(kernel_id, this.size,1,1);
+            return result;
+        }
+
         public IntTensor AbsGPU(IntTensor result)
         {
             int kernel_id = shader.FindKernel("AbsElemInt");
@@ -130,6 +140,56 @@ namespace OpenMined.Syft.Tensor
             shader.SetBuffer(kernel_id, "SubElemIntDataB_", tensor.DataBuffer);
 
             shader.Dispatch(kernel_id, this.size, 1, 1);
+        }
+
+        public IntTensor UnfoldGPU(int[] new_shape, int size, int dimSize, int sizeBeforeDim, int sizeAfterDim, int step)
+        {
+            IntTensor result = factory.Create(new_shape);
+            result.Gpu(shader);
+
+            int kernel_id = shader.FindKernel("UnfoldInt");
+
+            var sizeBuffer = SendIntToGpu(kernel_id, size, "UnfoldIntSize");
+            var dimSizeBuffer = SendIntToGpu(kernel_id, dimSize, "UnfoldIntDimSize");
+            var sizeBeforeDimBuffer = SendIntToGpu(kernel_id, sizeBeforeDim, "UnfoldIntSizeBeforeDim");
+            var sizeAfterDimBuffer = SendIntToGpu(kernel_id, sizeAfterDim, "UnfoldIntSizeAfterDim");
+            var stepBuffer = SendIntToGpu(kernel_id, step, "UnfoldIntStep");
+            shader.SetBuffer(kernel_id, "UnfoldIntData", this.DataBuffer);
+            shader.SetBuffer(kernel_id, "UnfoldIntResult", result.DataBuffer);
+
+            shader.Dispatch(kernel_id, result.size, 1, 1);
+
+            sizeBuffer.Release();
+            dimSizeBuffer.Release();
+            sizeBeforeDimBuffer.Release();
+            sizeAfterDimBuffer.Release();
+            stepBuffer.Release();
+
+            return result;
+        }
+
+        private ComputeBuffer SendFloatToGpu(int kernel, float value, string name)
+        {
+            float[] scalarArray = new float[1];
+            scalarArray[0] = value;
+
+            var scalarBuffer = new ComputeBuffer(1, sizeof(float));
+            scalarBuffer.SetData(scalarArray);
+            shader.SetBuffer(kernel, name, scalarBuffer);
+
+            return scalarBuffer;
+        }
+
+        private ComputeBuffer SendIntToGpu(int kernel, int value, string name)
+        {
+            int[] array = new int[1];
+            array[0] = value;
+
+            var arrayBuffer = new ComputeBuffer(1, sizeof(float));
+            arrayBuffer.SetData(array);
+            shader.SetBuffer(kernel, name, arrayBuffer);
+
+            return arrayBuffer;
         }
 
     }

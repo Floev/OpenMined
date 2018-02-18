@@ -1,13 +1,11 @@
 using UnityEngine;
-using System;
 using NUnit.Framework;
 using OpenMined.Network.Controllers;
-using OpenMined.Syft.Tensor;
 
-namespace OpenMined.Tests.Editor.FloatTensor
+namespace OpenMined.Tests.Tensor.FloatTensor
 {
-    [Category("FloatTensor Serialization Tests")]
-    public class FloatTensorSerializationTests
+    [Category("SerializationTest")]
+    public class SerializationTest
     {
         private SyftController ctrl;
 

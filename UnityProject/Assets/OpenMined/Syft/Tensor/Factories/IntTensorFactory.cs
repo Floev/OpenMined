@@ -34,11 +34,9 @@ namespace OpenMined.Syft.Tensor.Factories
             //Debug.LogFormat("<color=purple>Removing Tensor {0}</color>", id);
 
             var tensor = tensors [id];
-           
             
             tensors.Remove (id);
             tensor.Dispose();
-
         }
 
         public IntTensor Create(int[] _shape,
@@ -46,6 +44,7 @@ namespace OpenMined.Syft.Tensor.Factories
             ComputeBuffer _dataBuffer = null,
             ComputeBuffer _shapeBuffer = null,
             ComputeBuffer _stridesBuffer = null,
+            ComputeShader _shader = null,
             bool _copyData = true,
             bool _dataOnGpu = false,
             string _creation_op = null)

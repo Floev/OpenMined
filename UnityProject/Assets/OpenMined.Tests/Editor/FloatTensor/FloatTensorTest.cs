@@ -6,10 +6,10 @@ using OpenMined.Protobuf;
 using Google.Protobuf;
 using OpenMined.Protobuf.Onnx;
 
-namespace OpenMined.Tests.Editor.FloatTensorTests
+namespace OpenMined.Tests.Tensor.FloatTensor
 {
-    [Category("FloatTensorCPUTests")]
-    public class FloatTensorCPUTest
+    [Category("CPUTest")]
+    public class CPUTest
     {
         private SyftController ctrl;
 
@@ -223,12 +223,8 @@ namespace OpenMined.Tests.Editor.FloatTensorTests
             var tensor1 = ctrl.floatTensorFactory.Create(_data: data, _shape: tensor1_shape);
             var tensor2 = ctrl.floatTensorFactory.Create(_data: data, _shape: tensor2_shape);
 
-            Debug.LogFormat("base1 {0}, left {1}, right {2}", base1.Print(), tensor1.Print(), tensor2.Transpose().Print());
             base1.AddMMT(tensor1, tensor2.Transpose());
-            Debug.LogFormat("base1 res {0}", base1.Print());
-            Debug.LogFormat("base2 {0}, left {1}, right {2}", base2.Print(), tensor2.Print(), tensor1.Transpose().Print());
             base2.AddMMT(tensor2, tensor1.Transpose());
-            Debug.LogFormat("base2 res {0}", base2.Print());
 
             for (int i = 0; i < base1_shape[0]; i++)
             {
@@ -3120,8 +3116,6 @@ namespace OpenMined.Tests.Editor.FloatTensorTests
             }
 
             var transposed = tensor.Transpose(0, 2);
-            Debug.LogFormat("In: {0}", tensor.Print());
-            Debug.LogFormat("Out: {0}", transposed.Print());
 
             for (int i = 0; i < transposed.Shape[0]; i++)
             {
