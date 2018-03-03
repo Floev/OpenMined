@@ -308,9 +308,9 @@ namespace OpenMined.Tests.Model
             var output2 = conv2.Forward(input2);
             var output2swap = conv2swap.Forward(input2);
             var biasedOutput2 = biasedConv2.Forward(input2);
-            Debug.LogFormat("Res {0}, target {1}", string.Join(",", output2.Data), string.Join(",", target2.Data));
-            Debug.LogFormat("Res swap {0}, target {1}", string.Join(",", output2swap.Data), string.Join(",", outputData2swap));
-            Debug.LogFormat("Biased Res {0}, target {1}", string.Join(",", biasedOutput2.Data), string.Join(",", biasedOutputData2));
+//            Debug.LogFormat("Res {0}, target {1}", string.Join(",", output2.Data), string.Join(",", target2.Data));
+  //          Debug.LogFormat("Res swap {0}, target {1}", string.Join(",", output2swap.Data), string.Join(",", outputData2swap));
+    //        Debug.LogFormat("Biased Res {0}, target {1}", string.Join(",", biasedOutput2.Data), string.Join(",", biasedOutputData2));
             for (int i = 0; i < target2.Size; i++)
             {
                 Assert.AreEqual(target2[i], output2[i]);

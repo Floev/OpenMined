@@ -227,7 +227,6 @@ namespace OpenMined.Syft.Tensor
             else if (cpu)
             {
                 var nCpu = SystemInfo.processorCount;
-                Debug.LogFormat("mm cpu: {0}", nCpu);
                 Parallel.For(0, nCpu, workerId =>
                 {
                     var max = size * (workerId + 1) / nCpu;
@@ -278,7 +277,7 @@ namespace OpenMined.Syft.Tensor
             else if (cpu)
             {
                 var nCpu = Math.Min( SystemInfo.processorCount, size );
-                Debug.LogFormat("Nb CPUs: {0}", nCpu);
+ //               Debug.LogFormat("Nb CPUs: {0}", nCpu);
                 Parallel.For(0, nCpu, workerId =>
                 {
                     var idx = size * workerId / nCpu;
@@ -559,7 +558,7 @@ namespace OpenMined.Syft.Tensor
             //          int workerId = 0;
             int nbBatchOut = size / Strides[1];
             var nCpu = Math.Min(SystemInfo.processorCount, nbBatchOut);//parallelize mat-mul only
-            Debug.LogFormat("Nb CPUs {0}:", nCpu);
+            //Debug.LogFormat("Nb CPUs {0}:", nCpu);
             Parallel.For(0, nCpu, workerId =>
             {
                 var idx = nbBatchOut * workerId / nCpu;

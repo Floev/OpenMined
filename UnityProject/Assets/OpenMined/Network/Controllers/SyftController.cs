@@ -286,10 +286,10 @@ namespace OpenMined.Network.Controllers
 						{
 							string model_type = msgObj.tensorIndexParams[0];
                             string arg_split = "";
-                            if (msgObj.tensorIndexParams.Length > 0) arg_split = " : ";
+                            if (msgObj.tensorIndexParams.Length > 1) arg_split = " : ";
 
                             Debug.LogFormat("<color=magenta>createModel:</color> {0}{1}{2}", model_type, arg_split,
-                            string.Join(" ", msgObj.tensorIndexParams));
+                            string.Join(" ", msgObj.tensorIndexParams.Skip(1)));
 
                             if (model_type == "conv2d")//including convtranspose2d
                             {
@@ -367,12 +367,17 @@ namespace OpenMined.Network.Controllers
                                     response(new Embedding(this, int.Parse(msgObj.tensorIndexParams[1]), int.Parse(msgObj.tensorIndexParams[2])).Id.ToString());
                                     return;
                             }
+                            else if (model_type == "view")
+                            {
+                                    response(BuildView(msgObj.tensorIndexParams).Id.ToString());
+                                    return;
+                            }
 							else
 							{
 								Debug.LogFormat("<color=red>Model Type Not Found:</color> {0}", model_type);
 							}
-						}
-						else
+                        }
+                        else
 						{
 							//Debug.Log("Getting Model:" + msgObj.objectIndex);
 							Model model = this.GetModel(msgObj.objectIndex);
@@ -690,7 +695,7 @@ namespace OpenMined.Network.Controllers
             int[] padding = { args[6], args[7] };
             int[] dilation = { args[8], args[9] };
             bool bias = args[11] != 0;
-            bool transposed = args[11] != 0;
+            bool transposed = args[12] != 0;
             return new Conv2d(this, kernel, stride, padding, dilation, args[10], bias, transposed);
         }
 
@@ -736,10 +741,16 @@ namespace OpenMined.Network.Controllers
 			return new Softmax(this, reduction_dim);
 		}
 
-		private LogSoftmax BuildLogSoftmax(string[] parameters)
-		{
-			int reduction_dim = int.Parse(parameters[1]);
-			return new LogSoftmax(this, reduction_dim);
-		}
+        private LogSoftmax BuildLogSoftmax(string[] parameters)
+        {
+            int reduction_dim = int.Parse(parameters[1]);
+            return new LogSoftmax(this, reduction_dim);
+        }
+
+        private View BuildView(string[] parameters)
+        {
+            int[] args = parameters.Skip(1).Select(s => int.Parse(s)).ToArray();
+            return new View(this, args);
+        }
     }
 }
