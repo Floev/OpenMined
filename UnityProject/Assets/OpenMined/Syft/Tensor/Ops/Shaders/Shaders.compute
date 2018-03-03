@@ -191,8 +191,8 @@ void AddMM_ (uint3 id : SV_DispatchThreadID) {
 	int O = AddmmDimensionsO_[0];
 
 	for (int i = 0; i < N; i++) {
-		int Arow = (int) ( ( id.x - (id.x % O) ) / O);
 		int Acol = id.x % O;
+		int Arow = (int) ( ( id.x - Acol ) / O);
 		int BDataIndex = (Arow * N) + i;
 		int CDataIndex = Acol + (i * O);
 		AddmmDataA_[id.x] += AddmmDataB_[ BDataIndex ] * AddmmDataC_[ CDataIndex ];
@@ -204,19 +204,17 @@ void AddMM_ (uint3 id : SV_DispatchThreadID) {
 RWStructuredBuffer<float> AddmmtDataA_;
 StructuredBuffer<float> AddmmtDataB_;
 StructuredBuffer<float> AddmmtDataC_;
-StructuredBuffer<int> AddmmtDimensionsM_;
 StructuredBuffer<int> AddmmtDimensionsN_;
 StructuredBuffer<int> AddmmtDimensionsO_;
 
 [numthreads(4,1,1)]
 void AddMMT_ (uint3 id : SV_DispatchThreadID) {
 
-	int M = AddmmtDimensionsM_[0];
 	int N = AddmmtDimensionsN_[0];
 	int O = AddmmtDimensionsO_[0];
 
 	int j = id.x % O;
-	int i = (id.x - j) / M;
+	int i = (id.x - j) / O;
 	int Bid = i * N;
 	int Cid = j * N;
 	for (int l = 0; l < N; l++)

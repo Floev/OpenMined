@@ -440,7 +440,6 @@ namespace OpenMined.Syft.Tensor
             Debug.LogFormat("<color=blue>FloatTensor.addmmt dataOnGpu: {0}</color>", dataOnGpu);
 
             // Tensor 1 (M x N), Tensor 2 (O x N), this (M x O)
-            var bufferM = SendIntToGpu(AddMMTKernel_, tensor_1.shape[0], "AddmmtDimensionsM_");
             var bufferN = SendIntToGpu(AddMMTKernel_, tensor_1.shape[1], "AddmmtDimensionsN_");
             var bufferO = SendIntToGpu(AddMMTKernel_, tensor_2.shape[0], "AddmmtDimensionsO_");
             shader.SetBuffer(AddMMTKernel_, "AddmmtDataA_", dataBuffer);
@@ -448,7 +447,6 @@ namespace OpenMined.Syft.Tensor
             shader.SetBuffer(AddMMTKernel_, "AddmmtDataC_", tensor_2.DataBuffer);
             shader.Dispatch(AddMMTKernel_, size, 1, 1);
 
-            bufferM.Release();
             bufferN.Release();
             bufferO.Release();
         }

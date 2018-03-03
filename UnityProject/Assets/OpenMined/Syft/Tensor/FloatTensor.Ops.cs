@@ -227,6 +227,7 @@ namespace OpenMined.Syft.Tensor
             else if (cpu)
             {
                 var nCpu = SystemInfo.processorCount;
+                Debug.LogFormat("mm cpu: {0}", nCpu);
                 Parallel.For(0, nCpu, workerId =>
                 {
                     var max = size * (workerId + 1) / nCpu;
@@ -260,16 +261,15 @@ namespace OpenMined.Syft.Tensor
             bool gpu = dataOnGpu & tensor1.DataOnGpu & tensor2.DataOnGpu;
             bool cpu = !(dataOnGpu | tensor1.DataOnGpu | tensor2.DataOnGpu);
 
-            int[] res_shape = Shape;
             int[] shape1 = tensor1.Shape;
             int[] shape2 = tensor2.Shape;
 
             if (shape1[1] != shape2[1])
                 throw new InvalidOperationException(String.Format("Matrix multiply transpose not possible: {0} & {1}.", shape1[1], shape2[1]));
-            if (res_shape[0] != shape1[0])
-                throw new InvalidOperationException(String.Format("First dimension doesn't match: {0} vs {1}.", res_shape[0], shape1[0]));
-            if (res_shape[1] != shape2[0])
-                throw new InvalidOperationException(String.Format("Last dimension doesn't match: {0} vs {1}.", res_shape[res_shape.Length - 1], shape2[shape2.Length - 1]));
+            if (Shape[0] != shape1[0])
+                throw new InvalidOperationException(String.Format("First dimension doesn't match: {0} vs {1}.", Shape[0], shape1[0]));
+            if (Shape[1] != shape2[0])
+                throw new InvalidOperationException(String.Format("Last dimension doesn't match: {0} vs {1}.", Shape[Shape.Length - 1], shape2[shape2.Length - 1]));
 
             if (gpu)
             {
@@ -278,14 +278,14 @@ namespace OpenMined.Syft.Tensor
             else if (cpu)
             {
                 var nCpu = Math.Min( SystemInfo.processorCount, size );
+                Debug.LogFormat("Nb CPUs: {0}", nCpu);
                 Parallel.For(0, nCpu, workerId =>
                 {
                     var idx = size * workerId / nCpu;
                     for (int k = idx; k < size * ( workerId + 1 ) / nCpu; k++)
                     {
-                        var j = k % res_shape[1];
-                        var i = (k - j) / res_shape[0];
-                        int t1_start = i * shape1[1];
+                        var j = k % Shape[1];
+                        int t1_start = ( (k - j) / Shape[1] ) * shape1[1];
                         int t2_start = j * shape1[1];
                         for (var l = 0; l < shape1[1]; l++)
                         {
@@ -467,7 +467,162 @@ namespace OpenMined.Syft.Tensor
             
             return result;
         }
-        
+
+        public FloatTensor Conv2d(FloatTensor kernel, IntTensor stride, IntTensor padding, IntTensor dilation, IntTensor group, bool transposed = false, FloatTensor result = null)
+        {
+            if( result != null)
+            {
+                if (result.Shape.Length != 4)
+                    new InvalidOperationException(String.Format("Conv2d result should be size 4, is {0}", result.Shape.Length));
+            }
+
+            int[] outShape = new int[4];
+            string creation_op = "conv2d";
+            outShape = new int[] { Shape[0],//samples
+                    kernel.Shape[0],//feautres (not [1] because weights are stored (0,1) tansposed)
+                    Shape[2],//conv dim1
+                    Shape[3]//conv dim2
+                };
+
+            if (transposed)
+            {
+                creation_op += "transposed";
+                outShape[2] += kernel.Shape[2] - 1;//conv dim1
+                outShape[3] += kernel.Shape[3] - 1;//conv dim1
+            }
+            else
+            {
+                outShape[2] -= kernel.Shape[2] - 1;//conv dim1
+                outShape[3] -= kernel.Shape[3] - 1;//conv dim1
+            };
+
+            result = HookGraph(result: ref result,
+                    tensor_inputs: new FloatTensor[] { kernel },
+                    indices: new IntTensor[] { stride, padding, dilation, group },
+                    creation_op: creation_op,
+                    inline: false,
+                    resultShape: outShape);
+
+            result.AddConv2d(this, kernel, stride, padding, dilation, group, transposed: transposed);
+
+            return result;
+        }
+
+        public FloatTensor AddConv2d(FloatTensor x, FloatTensor kernel, IntTensor stride, IntTensor padding, IntTensor dilation, IntTensor group, bool transposed = false)
+        {
+            if (group.Size != 1)
+                new InvalidOperationException("Invalid group size");
+            if (group[0] != 1 || dilation[0] != 1 || dilation[1] != 1)
+                new InvalidOperationException("Group and dilation not yet implemented");
+
+            int[] shape1 = x.Shape;
+            int[] shape2 = kernel.Shape;
+
+            if (shape2.Length != 4)
+                throw new InvalidOperationException(String.Format("Kernel should be size 4D, is {0}D", shape2.Length));
+
+            if (Shape.Length != 4)
+                throw new InvalidOperationException(String.Format("Conv2d output should be 4D (batch,feature,dim1,dim2), is {0}D", Shape.Length));
+
+            if (shape1.Length != 4)
+                throw new InvalidOperationException(String.Format("Conv2d input should be 4D (batch,feature,dim1,dim2), is {0}D", shape1.Length));
+
+            if (!IsContiguous())
+                throw new InvalidOperationException("Output must be contiguous, call Contiguous() to convert");
+
+            if (!x.IsContiguous())
+                throw new InvalidOperationException("Input must be contiguous, call Contiguous() to convert");
+
+            if (!kernel.IsContiguous())
+                throw new InvalidOperationException("kernel must be contiguous, call Contiguous() to convert");
+
+            //in simplest case:
+            //Shape (batch/features/dim1/dim2) = [i,j,k,l] and kernel = [j,r,m,n] -> output [i,r,p,q] where p = k+1-m, q=l+1-n
+            int k = 0;
+            int l = 0;
+            int p_min = 0;
+            int q_min = 0;
+            int p_max = Shape[2];
+            int q_max = Shape[3];
+
+            /*
+                        Debug.LogFormat("x shape: ({0},{1},{2},{3})", x.Shape[0], x.Shape[1], x.Shape[2], x.Shape[3]);
+                        Debug.LogFormat("kernel shape: ({0},{1},{2},{3})", kernel.Shape[0], kernel.Shape[1], kernel.Shape[2], kernel.Shape[3]);
+                        Debug.LogFormat("Out shape: ({0},{1},{2},{3})", Shape[0], Shape[1], Shape[2], Shape[3]);
+                        Debug.LogFormat("x Strides: ({0},{1},{2},{3})", x.Strides[0], x.Strides[1], x.Strides[2], x.Strides[3]);
+                        Debug.LogFormat("kernel Strides: ({0},{1},{2},{3})", kernel.Strides[0], kernel.Strides[1], kernel.Strides[2], kernel.Strides[3]);
+                        Debug.LogFormat("Out Strides: ({0},{1},{2},{3})", Strides[0], Strides[1], Strides[2], Strides[3]);
+
+                        Debug.LogFormat("wkI increases by stride[1] {0}", Strides[1]);
+            */
+            //            int nCpu = 1;
+            //          int workerId = 0;
+            int nbBatchOut = size / Strides[1];
+            var nCpu = Math.Min(SystemInfo.processorCount, nbBatchOut);//parallelize mat-mul only
+            Debug.LogFormat("Nb CPUs {0}:", nCpu);
+            Parallel.For(0, nCpu, workerId =>
+            {
+                var idx = nbBatchOut * workerId / nCpu;
+                for (int wkI = idx; wkI < nbBatchOut * (workerId + 1) / nCpu; wkI+=1)
+                {
+//                    Debug.LogFormat("wkI {0}", wkI);
+                    int j = wkI % Shape[1];
+                    int i = ((wkI - j) / Shape[1]);
+                    int x_start = i  * shape1[1]*x.Strides[1];
+                    int kernel_start = j * shape2[1] * kernel.Strides[1];
+                    wkI*=Strides[1];
+                    for (int mm = 0; mm < shape1[1]; mm+=1)//matrix multiply summation index
+                    {
+  //                      Debug.LogFormat("mm {0}",mm );
+                        for (var m = 0; m < kernel.Shape[2]; m++)
+                        {
+    //                        Debug.LogFormat("m {0}", m);
+                            if (transposed) { p_min = m; p_max = Math.Min(Shape[2], m + x.Shape[2]); }
+                            for (var p = p_min; p < p_max; p++)
+                            {
+      //                          Debug.LogFormat("p {0}",p );
+                                if (transposed) { k = p - m; }
+                                else { k = p + m; }
+        //                        Debug.LogFormat("set k to {0}",k );
+
+                                for (var n = 0; n < kernel.Shape[3]; n++)
+                                {
+          //                          Debug.LogFormat("n {0}",n );
+                                    if (transposed) { q_min = n; q_max = Math.Min(Shape[3], n + x.Shape[3]); }
+                                    for (var q = q_min; q < q_max; q++)
+                                    {
+            //                            Debug.LogFormat("q {0}",q );
+                                        if (transposed) { l = q - n; }
+                                        else { l = q + n; }
+                                        //                      Debug.LogFormat("set l to{0}", l);
+                                        //                    Debug.LogFormat("x_start {0}, kernel start {1}", x_start, kernel_start);
+                                        /*                                        if (kernel[kernel_start + m * kernel.Strides[2] + n * kernel.Strides[3]] != 0)
+                                        {
+
+                                            Debug.LogFormat("Populate: [{0},{1},{2},{3}]", (wkI - wkI % Strides[0]) / Strides[0], (wkI % Strides[0]) / Strides[1], p, q);
+                                            Debug.LogFormat("with kernel: [{0},{1},{2},{3}]", (kernel_start - kernel_start % kernel.Strides[0]) / kernel.Strides[0], (kernel_start % kernel.Strides[0]) / kernel.Strides[1], m, n);
+                                            Debug.LogFormat("kernel val: {0}", kernel[kernel_start + m * kernel.Strides[2] + n * kernel.Strides[3]]);
+                                            Debug.LogFormat("and with input: [{0},{1},{2},{3}]", (x_start - x_start % x.Strides[0]) / x.Strides[0], (x_start % x.Strides[0]) / x.Strides[1], k, l);
+                                            Debug.LogFormat("input val: {0}", x[x_start + k * x.Strides[2] + l * x.Strides[3]]);
+                                            Debug.LogFormat("res current: {0} in {1}", this[wkI + p * Strides[2] + q * Strides[3]] + x[x_start + k * x.Strides[2] + l * x.Strides[3]] * kernel[kernel_start + m * kernel.Strides[2] + n * kernel.Strides[3]],
+                                                wkI + p * Strides[2] + q * Strides[3]);
+                                        }
+                                    */
+                                        this[wkI + p * Strides[2] + q * Strides[3]] += x[x_start + k * x.Strides[2] + l * x.Strides[3]] * kernel[kernel_start + m * kernel.Strides[2] + n * kernel.Strides[3]];
+                                        
+                                    }
+                                }
+                            }
+                        }
+
+                        x_start += x.Strides[1];
+                        kernel_start += kernel.Strides[1];
+                    }
+                }
+            });
+
+            return this;
+        }
         public FloatTensor Cos(bool inline = false)
         {
             if (dataOnGpu)
@@ -758,6 +913,7 @@ namespace OpenMined.Syft.Tensor
                         newStrides[i] = 0;
                         newShape[i] = sizes[i];
                     } else {
+                        Debug.LogFormat("Cannot expand dimension {0}, not a singleton ({1})", i, shape[i]);
                         throw new InvalidOperationException (String.Format ("Cannot expand dimension {0}, not a singleton ({1})", i, shape[i]));
                     }
                 }

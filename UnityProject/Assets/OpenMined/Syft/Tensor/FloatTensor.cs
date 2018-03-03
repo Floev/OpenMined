@@ -1234,47 +1234,9 @@ namespace OpenMined.Syft.Tensor
             return i;
         }
 
-        public string Print()
+        override protected string ToString(float var)
         {
-            bool dataOriginallyOnGpu = dataOnGpu;
-            ComputeShader _shader = this.shader;
-
-            if (dataOnGpu)
-            {
-                Cpu();
-            }
-
-            string print = "";
-
-            if (shape.Length > 3)
-                print += "Only printing the last 3 dimesnions\n";
-            int d3 = 1;
-            if (shape.Length > 2)
-                d3 = shape[shape.Length - 3];
-            int d2 = 1;
-            if (shape.Length > 1)
-                d2 = shape[shape.Length - 2];
-            int d1 = shape[shape.Length - 1];
-
-            for (int k = 0; k < d3; k++)
-            {
-                for (int j = 0; j < d2; j++)
-                {
-                    for (int i = 0; i < d1; i++)
-                    {
-                        float f = this[i + j * d1 + k * d1 * d2];
-                        print += f.ToString("0.0000") + ", ";
-                    }
-                    print += "\n";
-                }
-                print += "\n";
-            }
-
-            if (dataOriginallyOnGpu)
-            {
-                Gpu(_shader);
-            }
-            return print;
+            return var.ToString("0.0000");
         }
     }
 }

@@ -132,9 +132,69 @@ namespace OpenMined.Syft.Tensor
                     }
                     else if (creation_op == "contiguous")
                     {
-                        //Debug.Log("Contiguous Backpropping Grad:" + grad.Id);
-                        //Debug.Log("Contiguous Storing Grad:" + this.Grad.Id);
+//                        Debug.Log("Contiguous Backpropping Grad:" + grad.Id);
+//                        Debug.Log("Contiguous Storing Grad:" + this.Grad.Id);
                         factory.Get(creators[0]).Backward(this.Grad.Copy(autograd:this.Grad.Autograd), this);
+                    }
+                    else if (creation_op == "conv2d")
+                    {
+                        var intFact = factory.ctrl.intTensorFactory;
+                        
+/*                        Debug.LogFormat("Conv2d grad dims {0}", String.Join(",", grad.Shape));
+                        Debug.LogFormat("Conv2d size creators {0}, int creators {1}", creators.Count, int_creators.Count);
+                        Debug.LogFormat("Conv2d arg0 dims {0}", String.Join(",", factory.Get(creators[0]).Shape));
+                        Debug.LogFormat("Conv2d arg1 dims {0}", String.Join(",", factory.Get(creators[1]).Shape));
+/*                        Debug.LogFormat("Conv2d arg2 dims {0}", String.Join(",", intFact.Get(int_creators[0]).Shape));
+                        Debug.LogFormat("Conv2d arg3 dims {0}", String.Join(",", intFact.Get(int_creators[1]).Shape));
+                        Debug.LogFormat("Conv2d arg4 dims {0}", String.Join(",", intFact.Get(int_creators[2]).Shape));
+                        Debug.LogFormat("Conv2d arg5 dims {0}", String.Join(",", intFact.Get(int_creators[3]).Shape));
+*/
+
+                        //                        FloatTensor bias=null;
+                        //                        if (creators.Count == 3)
+                        //                           bias = factory.Get(creators[2]);
+
+                        FloatTensor x = factory.Get(creators[0]);
+                        FloatTensor kernelt = factory.Get(creators[1]);
+                        FloatTensor gradt = grad.Transpose(0,1);
+                        //                        x.Backward(grad.MM(wt), this);
+                        //                      wt.Backward(gradt.MM(x), this);
+/*
+                        Debug.LogFormat("x shape {0}, val {1}", string.Join(",", x.Shape), string.Join(",", x.Data));
+                        Debug.LogFormat("kert shape {0}, val {1}", string.Join(",", kernelt.Shape), string.Join(",", kernelt.Data));
+                        Debug.LogFormat("grad shape {0}, val {1}", string.Join(",", grad.Shape), string.Join(",", grad.Data));
+                        Debug.LogFormat("gradt shape {0}, val {1}", string.Join(",", gradt.Shape), string.Join(",", gradt.Data));
+*/
+
+                        var toInput = grad.Conv2d(kernelt.Transpose(0,1),
+                            intFact.Get(int_creators[0]), intFact.Get(int_creators[1]), intFact.Get(int_creators[2]), intFact.Get(int_creators[3])
+                            ,true
+                            );
+                        x.Backward(toInput, this);
+
+                        var kernelUpdate = (x.Transpose(0, 1).Conv2d(gradt,
+                            intFact.Get(int_creators[0]), intFact.Get(int_creators[1]), intFact.Get(int_creators[2]), intFact.Get(int_creators[3])));
+                        //Debug.LogFormat("Conv2d kernel dims {0}", String.Join(",", creators[1].Shape));
+//                        Debug.LogFormat("Conv2d kernelUpdate dims {0}, vals {1}", String.Join(",", kernelUpdate.Shape), String.Join(",", kernelUpdate.Data));
+                        kernelUpdate = kernelUpdate.Transpose(0, 1);
+                        kernelt.Backward(kernelUpdate, this);
+                    }
+                    else if (creation_op == "mmt")
+                    {
+/*                        Debug.LogFormat("mmt grad dims {0}", String.Join(",", grad.Shape));
+                        Debug.LogFormat("mmt size creators {0}, int creators {1}", creators.Count, int_creators.Count);
+                        Debug.LogFormat("mmt arg0 dims {0}", String.Join(",", factory.Get(creators[0]).Shape));
+                        Debug.LogFormat("mmt arg1 dims {0}", String.Join(",", factory.Get(creators[1]).Shape));
+  */                      FloatTensor x = factory.Get(creators[0]);
+                        FloatTensor wt = factory.Get(creators[1]);
+                        FloatTensor gradt = grad.Transpose();
+    /*                    Debug.LogFormat("x shape {0}, val {1}", string.Join(",", x.Shape), string.Join(",", x.Data));
+                        Debug.LogFormat("kert shape {0}, val {1}", string.Join(",", wt.Shape), string.Join(",", wt.Data));
+                        Debug.LogFormat("grad shape {0}, val {1}", string.Join(",", grad.Shape), string.Join(",", grad.Data));
+                        Debug.LogFormat("gradt shape {0}, val {1}", string.Join(",", gradt.Shape), string.Join(",", gradt.Data));
+      */                  x.Backward(grad.MM(wt), this);
+                        wt.Backward(gradt.MM(x), this);
+        //                wt.Backward((x.Transpose().MMT(gradt)).Transpose(), this);
                     }
                     else if (creation_op == "copy")
                     {
@@ -165,8 +225,14 @@ namespace OpenMined.Syft.Tensor
                     {
                         var parent = factory.Get(creators[0]);
                         parent.Grad = null;
+//                        Debug.Log("Backprop expand");
+//                        Debug.LogFormat("grad shape {0}, val {1}", string.Join(",", grad.Shape), string.Join(",", grad.Data));
+//                        Debug.LogFormat("this shape {0}, val {1}", string.Join(",", Shape), string.Join(",", Data));
+//                        Debug.LogFormat("target shape {0}, val {1}", string.Join(",", parent.Shape), string.Join(",", parent.Data));
 
-	                    FloatTensor local_grad = grad.Copy(autograd:grad.Autograd);
+                        FloatTensor local_grad = grad.Copy(autograd:grad.Autograd);
+
+                        int[] grad_shape_new = (int[]) grad.Shape.Clone();
 	                    
                         var grad_shape = new int[shape.Length];
 
@@ -174,13 +240,16 @@ namespace OpenMined.Syft.Tensor
                         {
                             grad_shape[i] = grad.shape[i];
                         }
+//                        Debug.LogFormat("new grad shape {0}, redone {1}", string.Join(",", grad_shape), string.Join(",", grad_shape_new));
 
                         for (int i = 0; i < shape.Length; i++)
                         {
                             grad_shape[i] = parent.shape[i];
                             if (parent.shape[i] == 1 && shape[i] > 1)
                             {
-	                            local_grad = local_grad.Sum(i).View(grad_shape);
+                                var local_grad_new = local_grad.Sum(i, true);
+                                local_grad = local_grad.Sum(i).View(grad_shape);
+//                               Debug.LogFormat("agg dim {0}, res {1}, redone {2}", i, string.Join(",", local_grad.Data), string.Join(",", local_grad_new.Data));
                             }
                         }
 
@@ -238,7 +307,7 @@ namespace OpenMined.Syft.Tensor
                         factory.Get(creators[0]).Backward(grad.MM(wt), this);
                         factory.Get(creators[1]).Backward(xt.MM(grad), this);
                     }
-                    else if (creation_op == "mmt")
+/*                    else if (creation_op == "mmt")
                     {
                         FloatTensor x = factory.Get(creators[0]);
                         FloatTensor wt = factory.Get(creators[1]);
@@ -246,7 +315,7 @@ namespace OpenMined.Syft.Tensor
                         x.Backward(grad.MM(wt), this);
                         wt.Backward(gradt.MM(x), this);
                     }
-                    else if (creation_op == "neg")
+*/                    else if (creation_op == "neg")
                     {
                         factory.Get(creators[0]).Backward(grad.Neg(), this);
                     }

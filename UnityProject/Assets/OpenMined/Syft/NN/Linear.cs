@@ -1,25 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
 using OpenMined.Network.Controllers;
 using OpenMined.Syft.Tensor;
 using UnityEngine;
-using OpenMined.Network.Servers;
 using Newtonsoft.Json.Linq;
 using OpenMined.Protobuf.Onnx;
-using Google.Protobuf.Collections;
 
 namespace OpenMined.Syft.Layer
 {
-    
     public class Linear: Layer, LayerDefinition
 	{
 		private int _input;
 		private int _output;
 
         [SerializeField] string name = "linear";
-        [SerializeField] public FloatTensor _weights;
-        [SerializeField] FloatTensor _bias;
-        private bool _biased;
+        [SerializeField] private FloatTensor _weights;
+        [SerializeField] private FloatTensor _bias;
+        public bool _biased;
         private bool _fast;
 
         public Linear (SyftController _controller, int input, int output, string initializer="Xavier",
@@ -42,14 +38,7 @@ namespace OpenMined.Syft.Layer
             }
 
             if (_fast)
-            {
-                var new_weights = new float[weights.Length];
-                for (var idx = 0; idx < weights.Length; idx++)
-                {
-                    new_weights[(idx - (idx % output)) / output + input * (idx % output)] = weights[idx];
-                }
-                weights = new_weights;
-            }
+                weights = controller.floatTensorFactory.Create(_shape: new int[]{ input,output}, _data: weights).Transpose().Data;
 
             _weights = controller.floatTensorFactory.Create(_shape: weightShape, _data: weights, _autograd: true, _keepgrads: true);
 
@@ -57,6 +46,7 @@ namespace OpenMined.Syft.Layer
 
             if (_biased)
             {
+//                Debug.Log("Biased Linear Layer");
                 int[] biasShape = { 1, output };
                 _bias = controller.floatTensorFactory.Create(_data: bias, _shape: biasShape, _autograd: true);
                 parameters.Add(_bias.Id);
@@ -102,6 +92,8 @@ namespace OpenMined.Syft.Layer
 
             if (_biased)
             {
+//                Debug.Log("Biased Linear forward pass");
+                //                Debug.LogFormat("Expand from {0} to {1}", String.Join(",", _bias.Shape), String.Join(",", output.Shape));
                 output = output.Add(_bias.Expand(output.Shape).Contiguous());
             };
             activation = output.Id;

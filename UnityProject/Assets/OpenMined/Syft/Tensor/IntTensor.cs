@@ -142,8 +142,7 @@ namespace OpenMined.Syft.Tensor
         {
             throw new NotImplementedException();
         }
-
- 
+        
         public override string ProcessMessage(Command msgObj, SyftController ctrl)
         {
             switch (msgObj.functionCall)
@@ -484,6 +483,11 @@ namespace OpenMined.Syft.Tensor
             return "IntTensor.processMessage: Command not found:" + msgObj.functionCall;
         }
 
+        override protected string ToString(int var)
+        {
+            return var.ToString();
+        }
+
         public TensorProto GetProto()
         {
             // TensorProto t = base.ToProto();
@@ -529,6 +533,5 @@ namespace OpenMined.Syft.Tensor
 
             return i;
         }
-
     }
 }

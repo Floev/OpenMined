@@ -228,7 +228,10 @@ namespace OpenMined.Network.Controllers
 						if (msgObj.objectIndex == 0 && msgObj.functionCall == "create")
 						{
 							FloatTensor tensor = floatTensorFactory.Create(_shape: msgObj.shape, _data: msgObj.data, _shader: this.Shader);
-                            response(tensor.Id.ToString());
+                                string ctnd = "";
+                                if (tensor.Data.Length > 20)
+                                    ctnd = String.Format(", ... (size {0})", tensor.Data.Length);
+                                Debug.LogFormat("<color=magenta>createTensor:{0}</color> {1}{2}", tensor.Id, string.Join(", ", tensor.Data.Take(10)), ctnd); response(tensor.Id.ToString());
                             return;
 						}
 						else
@@ -282,10 +285,18 @@ namespace OpenMined.Network.Controllers
 						if (msgObj.functionCall == "create")
 						{
 							string model_type = msgObj.tensorIndexParams[0];
+                            string arg_split = "";
+                            if (msgObj.tensorIndexParams.Length > 0) arg_split = " : ";
 
-							Debug.LogFormat("<color=magenta>createModel:</color> {0}", model_type);
+                            Debug.LogFormat("<color=magenta>createModel:</color> {0}{1}{2}", model_type, arg_split,
+                            string.Join(" ", msgObj.tensorIndexParams));
 
-							if (model_type == "linear")
+                            if (model_type == "conv2d")//including convtranspose2d
+                            {
+                                response(this.BuildConv2d(msgObj.tensorIndexParams).Id.ToString());
+                                return;
+                            }
+                            else if (model_type == "linear")
 							{
                                     response(this.BuildLinear(msgObj.tensorIndexParams).Id.ToString());
                                     return;
@@ -671,7 +682,19 @@ namespace OpenMined.Network.Controllers
 			return m;
 		}
 
-		private Sequential BuildSequential()
+        private Conv2d BuildConv2d(string[] parameters)
+        {
+            int[] args = parameters.Skip(1).Select(s => int.Parse(s)).ToArray();
+            int[] kernel = { args[0], args[1], args[2], args[3] };
+            int[] stride = { args[4], args[5] };
+            int[] padding = { args[6], args[7] };
+            int[] dilation = { args[8], args[9] };
+            bool bias = args[11] != 0;
+            bool transposed = args[11] != 0;
+            return new Conv2d(this, kernel, stride, padding, dilation, args[10], bias, transposed);
+        }
+
+        private Sequential BuildSequential()
 		{
 			return new Sequential(this);
 		}
